@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "60681693325",
+    "project_id": "ipl2026-dafa1",
+    "storage_bucket": "ipl2026-dafa1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:60681693325:android:a06104488d9af3ebda9ac4",
+        "android_client_info": {
+          "package_name": "com.example.ipl2026"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCTUwgWOC_hGuNxQ9nXqZcWPC5RFQaN2zc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
