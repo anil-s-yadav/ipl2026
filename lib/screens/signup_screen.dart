@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ipl2026/screens/login_screen.dart';
 import 'package:ipl2026/services/auth_service.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -11,9 +12,10 @@ class SignupScreen extends StatefulWidget {
     TextEditingController cnt,
     String hint,
     IconData icon, {
+    bool isPhone = false,
     bool isPassword = false,
   }) {
-    return TextField(
+    return TextFormField(
       obscureText: isPassword,
       controller: cnt,
       style: const TextStyle(color: Colors.white),
@@ -28,6 +30,16 @@ class SignupScreen extends StatefulWidget {
           borderSide: BorderSide.none,
         ),
       ),
+      validator: (value) {
+        if (isPhone) {
+          return null;
+        }
+        if (value == null || value.isEmpty) {
+          return "Feild cant be empty!";
+        } else {
+          return null;
+        }
+      },
     );
   }
 }
@@ -37,22 +49,8 @@ class _SignupScreenState extends State<SignupScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final phoneController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
   final AuthService _auth = AuthService();
-
-  void signupUser() async {
-    String? result = await _auth.signup(
-      name: nameController.text,
-      email: emailController.text,
-      password: passwordController.text,
-      phone: phoneController.text,
-    );
-
-    if (result == null) {
-      print("Signup success");
-    } else {
-      print(result);
-    }
-  }
 
   @override
   void dispose() {
@@ -68,127 +66,160 @@ class _SignupScreenState extends State<SignupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color(0xff0f2027),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xff0f2027), Color(0xff203a43), Color(0xff2c5364)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+      body: Form(
+        key: _formKey,
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xff0f2027), Color(0xff203a43), Color(0xff2c5364)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
           ),
-        ),
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Container(
-              padding: const EdgeInsets.all(28),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.white.withOpacity(0.2)),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.sports_cricket,
-                    size: 60,
-                    color: Colors.white,
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  const Text(
-                    "Create Account",
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Container(
+                padding: const EdgeInsets.all(28),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: Colors.white.withOpacity(0.2)),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.sports_cricket,
+                      size: 60,
                       color: Colors.white,
                     ),
-                  ),
 
-                  const SizedBox(height: 25),
+                    const SizedBox(height: 10),
 
-                  /// NAME
-                  SignupScreen._field(
-                    nameController,
-                    "Full Name",
-                    Icons.person,
-                  ),
-
-                  const SizedBox(height: 15),
-
-                  /// EMAIL
-                  SignupScreen._field(emailController, "Email", Icons.email),
-
-                  const SizedBox(height: 15),
-
-                  /// PHONE
-                  SignupScreen._field(
-                    phoneController,
-                    "Phone Number (optional)",
-                    Icons.phone,
-                  ),
-
-                  const SizedBox(height: 15),
-
-                  /// PASSWORD
-                  SignupScreen._field(
-                    passwordController,
-                    "Password",
-                    Icons.lock,
-                    isPassword: true,
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  /// REFERRAL
-
-                  /// BUTTON
-                  SizedBox(
-                    width: double.infinity,
-                    height: 55,
-                    child: ElevatedButton(
-                      onPressed: () => signupUser(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xffFFD700),
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        elevation: 10,
-                      ),
-                      child: const Text(
-                        "CREATE ACCOUNT",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    const Text(
+                      "Create Account",
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 15),
+                    const SizedBox(height: 25),
 
-                  Text(
-                    "By signing up you agree to Terms & Privacy",
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.6),
-                      fontSize: 12,
+                    /// NAME
+                    SignupScreen._field(
+                      nameController,
+                      "Full Name",
+                      Icons.person,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    // Navigator.pushReplacement(
-                    //   context,
-                    //   MaterialPageRoute(builder: (context) => SignupScreen()),
-                    // ),
-                    child: Text(
-                      "Have account? Login",
-                      style: TextStyle(color: Colors.blue, fontSize: 12),
+
+                    const SizedBox(height: 15),
+
+                    /// EMAIL
+                    SignupScreen._field(emailController, "Email", Icons.email),
+
+                    const SizedBox(height: 15),
+
+                    /// PHONE
+                    SignupScreen._field(
+                      phoneController,
+                      "Phone Number (optional)",
+                      Icons.phone,
+                      isPhone: true,
                     ),
-                  ),
-                ],
+
+                    const SizedBox(height: 15),
+
+                    /// PASSWORD
+                    SignupScreen._field(
+                      passwordController,
+                      "Password",
+                      Icons.lock,
+                      isPassword: true,
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    /// REFERRAL
+
+                    /// BUTTON
+                    SizedBox(
+                      width: double.infinity,
+                      height: 55,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          if (_formKey.currentState!.validate()) {
+                            String? result = await _auth.signup(
+                              name: nameController.text,
+                              email: emailController.text,
+                              password: passwordController.text,
+                              phone: phoneController.text,
+                            );
+
+                            if (result == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    "Account created please Login.",
+                                  ),
+                                ),
+                              );
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => LoginScreen(),
+                                ),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text("Re-Try! \n\n$result")),
+                              );
+                            }
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xffFFD700),
+                          foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          elevation: 10,
+                        ),
+                        child: const Text(
+                          "CREATE ACCOUNT",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 15),
+
+                    Text(
+                      "By signing up you agree to Terms & Privacy",
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.6),
+                        fontSize: 12,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      // Navigator.pushReplacement(
+                      //   context,
+                      //   MaterialPageRoute(builder: (context) => SignupScreen()),
+                      // ),
+                      child: Text(
+                        "Have account? Login",
+                        style: TextStyle(color: Colors.blue, fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

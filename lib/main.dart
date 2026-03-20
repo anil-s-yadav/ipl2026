@@ -2,17 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:ipl2026/firebase_options.dart';
 import 'package:ipl2026/screens/dashboard_screen.dart';
+import 'package:ipl2026/screens/login_screen.dart';
+import 'package:ipl2026/services/shared_preferences.dart';
 import 'screens/home_screen.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // Add this line
+  await LocalStoragePref.instance!.initPrefBox();
 
-  runApp(const MyApp());
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  final isLoggedIn = LocalStoragePref.instance?.getLoginBool() ?? false;
+
+  runApp(MyApp(isLoggedIn: isLoggedIn));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool isLoggedIn;
+  const MyApp({super.key, required this.isLoggedIn});
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +26,7 @@ class MyApp extends StatelessWidget {
       title: 'IPL Betting',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(useMaterial3: true),
-      home: const MainScreen(),
+      home: isLoggedIn ? const MainScreen() : const LoginScreen(),
     );
   }
 }

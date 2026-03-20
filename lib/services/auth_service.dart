@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -58,5 +60,25 @@ class AuthService {
   /// CURRENT USER
   User? getCurrentUser() {
     return _auth.currentUser;
+  }
+
+  Future<Map<String, dynamic>?> getUserData() async {
+    try {
+      // 1. Get current logged-in user ID
+      String uid = _auth.currentUser!.uid;
+
+      // 2. Fetch the document from 'users' collection
+      DocumentSnapshot doc = await _db.collection('users').doc(uid).get();
+
+      if (doc.exists) {
+        return doc.data() as Map<String, dynamic>;
+      } else {
+        log("User document does not exist");
+        return null;
+      }
+    } catch (e) {
+      log("Error fetching user: $e");
+      return null;
+    }
   }
 }
