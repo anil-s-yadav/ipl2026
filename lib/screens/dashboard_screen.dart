@@ -1,5 +1,9 @@
+import 'dart:developer';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:ipl2026/screens/addmatchpage.dart';
+import 'package:ipl2026/screens/login_screen.dart';
 import 'package:ipl2026/services/auth_service.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -12,7 +16,9 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   final AuthService auth = AuthService();
   Map<String, dynamic>? user;
-
+  List<Map<String, dynamic>> otherUsers = [];
+  List<Map<String, dynamic>> myBetsHistory = [];
+  int showResult = 0;
   @override
   void initState() {
     super.initState();
@@ -20,10 +26,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void userData() async {
-    final data = await auth.getUserData();
+    final myData = await auth.getUserData();
+    final othersData = await auth.getAllUsersExceptMe();
+    final mybetshist = await auth.getMyBetsHis();
     setState(() {
-      user = data;
+      user = myData;
+      otherUsers = othersData;
+      myBetsHistory = mybetshist;
     });
+  }
+
+  bool isAdmin() {
+    return (user?['email'] == 'anilyadav44x@gmail.com');
+    // return (user?['email'] == 'anup_sharman70@yahu.co.in');
   }
 
   @override
@@ -45,6 +60,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                 child: Column(
                   children: [
+                    if (isAdmin())
+                      Row(
+                        children: [
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xff22C55E),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+
+                            onPressed: () {},
+
+                            child: const Text(
+                              "Settlement",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => AddMatchPage(),
+                                ),
+                              );
+                            },
+                            child: Text("Add matches"),
+                          ),
+                        ],
+                      ),
+
                     /// PROFILE
                     Container(
                       width: double.infinity,
@@ -62,6 +112,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
 
                       child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           CircleAvatar(
                             radius: 30,
@@ -75,8 +126,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                           ),
 
-                          const SizedBox(width: 15),
-
+                          // const SizedBox(width: 15),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -94,6 +144,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 style: const TextStyle(color: Colors.white70),
                               ),
                             ],
+                          ),
+                          // const SizedBox(width: 15),
+                          IconButton(
+                            onPressed: () {
+                              auth.logout();
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const LoginScreen(),
+                                ),
+                                (route) => false,
+                              );
+                            },
+                            icon: Icon(Icons.logout_rounded, color: Colors.red),
                           ),
                         ],
                       ),
@@ -165,40 +229,79 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            const SizedBox(height: 15),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 const Text(
-                                  "Bet History",
+                                  "My Bet History",
                                   style: TextStyle(
-                                    // color: Colors.white,
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 DropdownMenu(
-                                  dropdownMenuEntries: [
-                                    DropdownMenuEntry(value: 0, label: "wins"),
-                                    DropdownMenuEntry(value: 0, label: "loss"),
+                                  initialSelection: 0,
+                                  dropdownMenuEntries: const [
+                                    DropdownMenuEntry(
+                                      value: 0,
+                                      label: "My Wins",
+                                    ),
+                                    DropdownMenuEntry(
+                                      value: 1,
+                                      label: "My Losses",
+                                    ),
                                   ],
+                                  onSelected: (value) {
+                                    setState(() {
+                                      showResult = value ?? 0;
+                                    });
+                                  },
                                 ),
                               ],
                             ),
 
                             const SizedBox(height: 15),
 
-                            Expanded(
-                              child: ListView.builder(
-                                physics: ScrollPhysics(),
-                                itemCount: 10,
-                                itemBuilder: (context, index) => BetTile(
-                                  date: "24 Mar",
-                                  match: "MI vs CSK",
-                                  bet: "MI",
-                                  result: "Win",
-                                  amount: "+₹18",
-                                ),
-                              ),
+                            // ✅ STEP 2 → ADD HERE
+                            Builder(
+                              builder: (context) {
+                                if (myBetsHistory.isNotEmpty) {
+                                  List<Map<String, dynamic>> filteredBets =
+                                      myBetsHistory.where((bet) {
+                                        if (showResult == 0) {
+                                          return bet['result']
+                                                  .toString()
+                                                  .toLowerCase() ==
+                                              "win";
+                                        } else {
+                                          return bet['result']
+                                                  .toString()
+                                                  .toLowerCase() ==
+                                              "loss";
+                                        }
+                                      }).toList();
+
+                                  return Expanded(
+                                    child: ListView.builder(
+                                      itemCount: filteredBets.length,
+                                      itemBuilder: (context, index) {
+                                        final data = filteredBets[index];
+
+                                        return BetTile(
+                                          date: "${data['match_date']}",
+                                          match: "${data['matches']}",
+                                          bet: "${data['betted_team']}",
+                                          result: "${data['result']}",
+                                          amount: "${data['profit']}",
+                                        );
+                                      },
+                                    ),
+                                  );
+                                } else {
+                                  return SizedBox.shrink();
+                                }
+                              },
                             ),
                           ],
                         ),
@@ -234,50 +337,45 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             Expanded(
                               child: ListView.builder(
                                 physics: ScrollPhysics(),
-                                itemCount: 10,
-                                itemBuilder: (context, index) => ListTile(
-                                  title: Text("name"),
-                                  subtitle: Row(
-                                    spacing: 8,
-                                    children: [
-                                      Text("totalBets"),
-                                      Text("totalLosses"),
-                                      Text("totalWins"),
-                                    ],
-                                  ),
-                                  trailing: Text("totalProfit"),
-                                ),
+                                itemCount: otherUsers.length,
+                                itemBuilder: (context, index) {
+                                  final player = otherUsers[index];
+                                  log(player.toString());
+                                  return ListTile(
+                                    title: Text("${player['name']}"),
+                                    subtitle: FittedBox(
+                                      child: Row(
+                                        spacing: 2,
+                                        children: [
+                                          Text(
+                                            "total Bets: ${player['totalBets']}",
+                                          ),
+
+                                          Text(
+                                            "total Losses: ${player['totalLosses']}",
+                                          ),
+
+                                          Text(
+                                            "total Wins: ${player['totalWins']}",
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    trailing: Text(
+                                      "total Profit: ₹${player["totalProfit"]}",
+                                    ),
+                                  );
+                                },
                               ),
                             ),
                           ],
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+
+                    // const SizedBox(height: 20),
 
                     /// SETTLEMENT BUTTON
-                    SizedBox(
-                      width: double.infinity,
-                      height: 55,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xff22C55E),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-
-                        onPressed: () {},
-
-                        child: const Text(
-                          "Settlement",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -328,7 +426,6 @@ class BetTile extends StatelessWidget {
   final String bet;
   final String result;
   final String amount;
-
   const BetTile({
     super.key,
     required this.date,

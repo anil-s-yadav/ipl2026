@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class MatchCard extends StatelessWidget {
   final String teamA;
@@ -14,7 +15,13 @@ class MatchCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final today = date.isAfter(DateTime.now());
+    // final today = date.isAfter(DateTime.now());
+    final now = DateTime.now();
+
+    final isToday =
+        date.year == now.year && date.month == now.month && date.day == now.day;
+
+    final isUpcoming = date.isAfter(now);
 
     return Container(
       width: 150,
@@ -22,7 +29,7 @@ class MatchCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
 
       decoration: BoxDecoration(
-        color: today ? Colors.green.shade100 : Colors.grey,
+        color: isUpcoming || isToday ? Colors.green.shade100 : Colors.grey,
         borderRadius: BorderRadius.circular(16),
       ),
 
@@ -40,19 +47,16 @@ class MatchCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
 
             decoration: BoxDecoration(
-              color: today ? Colors.green : Colors.black,
+              color: isUpcoming || isToday ? Colors.green : Colors.black,
               borderRadius: BorderRadius.circular(20),
             ),
 
-            child: today
+            child: isUpcoming || isToday
                 ? Text(
-                    "Upcoming",
-                    style: TextStyle(color: Colors.white, fontSize: 12),
+                    DateFormat('dd MMM yyyy').format(date),
+                    style: const TextStyle(color: Colors.white),
                   )
-                : Text(
-                    "Completed",
-                    style: TextStyle(color: Colors.white, fontSize: 12),
-                  ),
+                : const Text("Closed", style: TextStyle(color: Colors.white)),
           ),
           const SizedBox(height: 10),
           Text(

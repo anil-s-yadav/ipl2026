@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:ipl2026/main.dart';
 import 'package:ipl2026/screens/login_screen.dart';
 import 'package:ipl2026/services/auth_service.dart';
+import 'package:ipl2026/services/shared_preferences.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -51,10 +53,10 @@ class _SignupScreenState extends State<SignupScreen> {
   final phoneController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   final AuthService _auth = AuthService();
+  bool isLoading = false;
 
   @override
   void dispose() {
-    // TODO: implement dispose
     super.dispose();
     nameController.dispose();
     emailController.dispose();
@@ -141,6 +143,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
 
                     const SizedBox(height: 20),
+                    if (isLoading) Center(child: CircularProgressIndicator()),
 
                     /// REFERRAL
 
@@ -151,6 +154,9 @@ class _SignupScreenState extends State<SignupScreen> {
                       child: ElevatedButton(
                         onPressed: () async {
                           if (_formKey.currentState!.validate()) {
+                            setState(() {
+                              isLoading = true;
+                            });
                             String? result = await _auth.signup(
                               name: nameController.text,
                               email: emailController.text,
@@ -160,16 +166,13 @@ class _SignupScreenState extends State<SignupScreen> {
 
                             if (result == null) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    "Account created please Login.",
-                                  ),
-                                ),
+                                SnackBar(content: Text("Account created.")),
                               );
+                              LocalStoragePref.instance!.setLoginBool(true);
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => LoginScreen(),
+                                  builder: (context) => MainScreen(),
                                 ),
                               );
                             } else {
@@ -177,6 +180,9 @@ class _SignupScreenState extends State<SignupScreen> {
                                 SnackBar(content: Text("Re-Try! \n\n$result")),
                               );
                             }
+                            setState(() {
+                              isLoading = true;
+                            });
                           }
                         },
                         style: ElevatedButton.styleFrom(

@@ -2,6 +2,8 @@ import 'dart:developer';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
+import 'package:ipl2026/services/shared_preferences.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -25,10 +27,10 @@ class AuthService {
         "name": name,
         "email": email,
         "phone": phone,
-        "totalWins": 0,
-        "totalLosses": 0,
-        "totalProfit": 0,
-        "totalBets": 0,
+        "totalWins": 0.0,
+        "totalLosses": 0.0,
+        "totalProfit": 0.0,
+        "totalBets": 0.0,
         "createdAt": FieldValue.serverTimestamp(),
       });
 
@@ -55,13 +57,15 @@ class AuthService {
   /// LOGOUT
   Future<void> logout() async {
     await _auth.signOut();
+    LocalStoragePref.instance!.logOutStorage();
   }
 
   /// CURRENT USER
-  User? getCurrentUser() {
-    return _auth.currentUser;
-  }
+  // User? getCurrentUser() {
+  //   return _auth.currentUser;
+  // }
 
+  //User profile
   Future<Map<String, dynamic>?> getUserData() async {
     try {
       // 1. Get current logged-in user ID
@@ -79,6 +83,114 @@ class AuthService {
     } catch (e) {
       log("Error fetching user: $e");
       return null;
+    }
+  }
+
+  // Get all users data
+
+  Future<List<Map<String, dynamic>>> getAllUsersExceptMe() async {
+    try {
+      String myUid = _auth.currentUser!.uid;
+
+      // Query 'users' collection where the document ID is not mine
+      // FieldPath.documentId refers to the actual ID of the document (mkYunXp...)
+      QuerySnapshot querySnapshot = await _db
+          .collection('users')
+          .where(FieldPath.documentId, isNotEqualTo: myUid)
+          .get();
+
+      // Map the documents into a list of Map objects
+      return querySnapshot.docs
+          .map((doc) => doc.data() as Map<String, dynamic>)
+          .toList();
+    } catch (e) {
+      print("Error fetching users: $e");
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getMyBetsHis() async {
+    try {
+      String uid = _auth.currentUser!.uid;
+
+      // Access subcollection: users/{uid}/mybets
+      QuerySnapshot querySnapshot = await _db
+          .collection('users')
+          .doc(uid)
+          .collection('mybets')
+          .orderBy("match_date", descending: true)
+          .get();
+
+      return querySnapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+
+        return {
+          "match_id": doc.id, // optional: include matchId
+          "betted_team": data["betted_team"] ?? "",
+          "matches": data["matches"] ?? "",
+          "result": data["result"] ?? "",
+          "profit": (data["profit"] ?? 0).toDouble(),
+          "match_date": data["match_date"] ?? "",
+        };
+      }).toList();
+    } catch (e) {
+      print("Error fetching my bets: $e");
+      return [];
+    }
+  }
+
+  Future<void> insertMatch(DateTime date, String teamA, String teamB) async {
+    try {
+      Map<String, dynamic> matchData = {
+        "matchDate": Timestamp.fromDate(date),
+        "teamA": teamA,
+        "teamABetAmount": 0.0,
+        "teamABetCount": 0.0,
+        "teamAbetUsers": [],
+        "teamB": teamB,
+        "teamBBetAmount": 0.0,
+        "teamBBetCount": 0.0,
+        "teamBbetUsers": [],
+        "totalBetsCount": 0.0,
+        "totalPoolAmount": 0.0,
+        "winnerTeam": "",
+      };
+
+      // ✅ Auto-generate matchId
+      await _db.collection('matches').add(matchData);
+    } catch (e) {
+      print("Error inserting match: $e");
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getAllMatches() async {
+    try {
+      QuerySnapshot snapshot = await _db.collection('matches').get();
+
+      print("Docs count: ${snapshot.docs.length}"); // debug
+
+      return snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+
+        return {
+          "match_id": doc.id,
+          "matchDate": (data["matchDate"] as Timestamp).toDate(),
+          "teamA": data["teamA"],
+          "teamABetAmount": data["teamABetAmount"],
+          "teamABetCount": data["teamABetCount"],
+          "teamAbetUsers": data["teamAbetUsers"],
+          "teamB": data["teamB"],
+          "teamBBetAmount": data["teamBBetAmount"],
+          "teamBBetCount": data["teamBBetCount"],
+          "teamBbetUsers": data["teamBbetUsers"],
+          "totalBetsCount": data["tetotalBetsCountamA"],
+          "totalPoolAmount": data["totalPoolAmount"],
+          "winnerTeam": data["winnerTeam"],
+        };
+      }).toList();
+    } catch (e) {
+      log("Error fetching matches: $e");
+      return [];
     }
   }
 }

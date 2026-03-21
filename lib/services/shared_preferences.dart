@@ -15,4 +15,8 @@ class LocalStoragePref {
   Future<void> setLoginBool(bool value) async {
     await _prefs?.setBool("isLoggedIn", value);
   }
+
+  Future<void> logOutStorage() async {
+    await _prefs?.clear();
+  }
 }
