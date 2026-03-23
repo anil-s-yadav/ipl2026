@@ -183,7 +183,7 @@ class AuthService {
           "teamBBetAmount": data["teamBBetAmount"],
           "teamBBetCount": data["teamBBetCount"],
           "teamBbetUsers": data["teamBbetUsers"],
-          "totalBetsCount": data["tetotalBetsCountamA"],
+          "totalBetsCount": data["tetotalBetsCount"],
           "totalPoolAmount": data["totalPoolAmount"],
           "winnerTeam": data["winnerTeam"],
         };
@@ -193,4 +193,49 @@ class AuthService {
       return [];
     }
   }
+
+  Future<List<Map<String, dynamic>>> getLogsByMatchId(String matchId) async {
+    try {
+      QuerySnapshot snapshot = await _db
+          .collection('logs')
+          .doc(matchId)
+          .collection('entries')
+          .get();
+
+      return snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        data["log_id"] = doc.id;
+        return data;
+      }).toList();
+    } catch (e) {
+      print("Error fetching logs: $e");
+      return [];
+    }
+  }
+
+  // Future<Map<String, dynamic>?> getMatchLog(String matchId) async {
+  //   try {
+  //     DocumentSnapshot doc = await _db.collection('logs').doc(matchId).get();
+
+  //     if (!doc.exists) {
+  //       print("No log found");
+  //       return null;
+  //     }
+
+  //     final data = doc.data() as Map<String, dynamic>;
+
+  //     return {
+  //       "match_id": doc.id,
+  //       "matchid": data["matchid"] ?? "",
+  //       "amount": (data["amount"] ?? 0).toDouble(),
+  //       "date_time": data["date_time"] ?? "",
+  //       "name": data["name"] ?? "",
+  //       "status": data["status"] ?? "",
+  //       "voted_team": data["voted_team"] ?? "",
+  //     };
+  //   } catch (e) {
+  //     print("Error fetching log: $e");
+  //     return null;
+  //   }
+  // }
 }

@@ -4,7 +4,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:ipl2026/screens/addmatchpage.dart';
 import 'package:ipl2026/screens/login_screen.dart';
+import 'package:ipl2026/screens/match_logs_page.dart';
 import 'package:ipl2026/services/auth_service.dart';
+import 'package:ipl2026/widgets/pastmatches_card.dart';
 import '../widgets/match_card.dart';
 import '../widgets/vote_buttons.dart';
 
@@ -21,6 +23,8 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> matches = [];
   List<Map<String, dynamic>> todayMatches = [];
   List<Map<String, dynamic>> pastMatches = [];
+  List<Map<String, dynamic>> crntmatch1logs = [];
+  List<Map<String, dynamic>> crntmatch2logs = [];
 
   @override
   void initState() {
@@ -53,14 +57,19 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
 
-    // 🔥 Combine (Today → Upcoming → Past)
+    // Combine (Today → Upcoming → Past)
     List<Map<String, dynamic>> sortedAll = [...today, ...upcoming, ...past];
     log(today.toString());
+    var crntMlog1 = await auth.getLogsByMatchId(today[0]['match_id']);
+    var crntMlog2 = await auth.getLogsByMatchId(today[1]['match_id']);
+
     setState(() {
       matches = sortedAll; // 1. Combined list
       todayMatches = today; // 2. Today list
       // upcomingMatches = upcoming; // (optional)
       pastMatches = past; // 3. Past list
+      crntmatch1logs = crntMlog1;
+      crntmatch2logs = crntMlog2;
     });
   }
 
@@ -256,24 +265,24 @@ class _HomeScreenState extends State<HomeScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: [
-                                // SizedBox(
-                                //   height: 50,
-                                //   child: ListView.builder(
-                                //     itemCount: tData['teamAbetUsers'].length,
-                                //     itemBuilder: (context, index) {
-                                //       return Text(tData['teamAbetUsers']);
-                                //     },
-                                //   ),
-                                // ),
-                                // SizedBox(
-                                //   height: 10,
-                                //   child: ListView.builder(
-                                //     itemCount: tData['teamBbetUsers'].length,
-                                //     itemBuilder: (context, index) {
-                                //       return Text(tData['teamBbetUsers']);
-                                //     },
-                                //   ),
-                                // ),
+                                SizedBox(
+                                  height: 50,
+                                  child: ListView.builder(
+                                    itemCount: tData['teamAbetUsers'].length,
+                                    itemBuilder: (context, index) {
+                                      return Text(tData['teamAbetUsers']);
+                                    },
+                                  ),
+                                ),
+                                SizedBox(
+                                  height: 10,
+                                  child: ListView.builder(
+                                    itemCount: tData['teamBbetUsers'].length,
+                                    itemBuilder: (context, index) {
+                                      return Text(tData['teamBbetUsers']);
+                                    },
+                                  ),
+                                ),
                               ],
                             ),
                           ],
@@ -287,7 +296,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const Padding(
                 padding: EdgeInsets.all(16),
                 child: Text(
-                  "Todays Bet Logs",
+                  "Todays Bet Logs Match 1",
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
               ),
@@ -299,32 +308,50 @@ class _HomeScreenState extends State<HomeScreen> {
                     borderRadius: BorderRadius.circular(10),
                     color: Colors.purple.shade50,
                   ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    spacing: 10,
-                    children: [
-                      // Text(
-                      //   "${todayMatches[0]ferwrQ['teamA'] ?? ""} vs ${todayMatches[0]['teamB'] ?? ""}",
-                      // ),
-                      Text(
-                        "Anil Yadav Voted Mi at 06-03-2026 at 05:53 AM Rs. 10",
-                      ),
-
-                      // Text(
-                      //   "${todayMatches[1]['teamA'] ?? ""} vs ${todayMatches[1]['teamB'] ?? ""}",
-                      // ),
-                      Text(
-                        "Anil Yadav Voted Mi at 06-03-2026 at 05:53 AM Rs. 10",
-                      ),
-                    ],
+                  child: ListView.builder(
+                    itemBuilder: (context, index) {
+                      final cmlog1 = crntmatch1logs[index];
+                      // maybe this is wrong I want make it dynamic.
+                      // there will be two matches per day I want to show logs for both fetch data
+                      return Text(
+                        "${cmlog1['name']} Voted ${cmlog1['voted_team']} at ${cmlog1['date_time']} Rs. 10",
+                      );
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  "Todays Bet Logs Match 1",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ),
+              Center(
+                child: Container(
+                  margin: EdgeInsets.symmetric(horizontal: 10),
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    color: Colors.purple.shade50,
+                  ),
+                  child: ListView.builder(
+                    itemBuilder: (context, index) {
+                      final cmlog2 = crntmatch2logs[index];
+                      // maybe this is wrong I want make it dynamic.
+                      // there will be two matches per day I want to show logs for both fetch data
+                      return Text(
+                        "${cmlog2['name']} Voted ${cmlog2['voted_team']} at ${cmlog2['date_time']} Rs. 10",
+                      );
+                    },
                   ),
                 ),
               ),
               const Padding(
                 padding: EdgeInsets.all(16),
                 child: Text(
-                  "All time Bet Logs",
+                  "Past Matches data",
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
               ),
@@ -332,46 +359,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 500,
                 child: ListView.builder(
                   itemCount: 10,
-                  itemBuilder: (context, index) => ExpansionTile(
-                    title: Text("Log_06_03_2026"),
-                    children: [
-                      Center(
-                        child: Container(
-                          margin: EdgeInsets.symmetric(horizontal: 10),
-                          padding: EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            color: Colors.blue.shade50,
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            spacing: 10,
-                            children: [
-                              Text(
-                                "Anil Yadav Voted Mi at 06-03-2026 at 05:53 AM Rs. 10, win:rs.20",
-                              ),
-                              Text(
-                                "Anil Yadav Voted Mi at 06-03-2026 at 05:53 AM Rs. 10, win:rs.20",
-                              ),
-                              Text(
-                                "Anil Yadav Voted Mi at 06-03-2026 at 05:53 AM Rs. 10, win:rs.20",
-                              ),
-                              Text(
-                                "Anil Yadav Voted Mi at 06-03-2026 at 05:53 AM Rs. 10, win:rs.20",
-                              ),
-                              Text(
-                                "Anil Yadav Voted Mi at 06-03-2026 at 05:53 AM Rs. 10, win:rs.20",
-                              ),
-                              Text(
-                                "Anil Yadav Voted Mi at 06-03-2026 at 05:53 AM Rs. 10, win:rs.20",
-                              ),
-                            ],
+                  itemBuilder: (context, index) {
+                    return GestureDetector(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => MatchLogsPage(
+                            match: pastMatches[index]['match_id'],
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                      child: PastmatchesCard(pastMatche: pastMatches[index]),
+                    );
+                  },
                 ),
               ),
             ],
