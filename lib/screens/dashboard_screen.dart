@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ipl2026/providers/app_provider.dart';
@@ -14,6 +16,8 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final AuthService auth = AuthService();
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
+
   int showResult = 0;
 
   @override
@@ -36,7 +40,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF0B0F19),
       appBar: AppBar(
-        title: const Text("DASHBOARD", style: TextStyle(fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 2)),
+        title: const Text(
+          "DASHBOARD",
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            color: Colors.white,
+            letterSpacing: 2,
+          ),
+        ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -50,12 +61,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
         actions: [
-          IconButton(onPressed: () => provider.initDashboardData(), icon: const Icon(Icons.refresh, color: Colors.white)),
+          IconButton(
+            onPressed: () => provider.initDashboardData(),
+            icon: const Icon(Icons.refresh, color: Colors.white),
+          ),
           const SizedBox(width: 10),
         ],
       ),
       body: provider.isLoadingDashboard || user == null
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF00E5FF)))
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFF00E5FF)),
+            )
           : Container(
               decoration: const BoxDecoration(
                 gradient: RadialGradient(
@@ -81,11 +97,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF00E5FF),
                                     foregroundColor: Colors.black,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
                                   ),
-                                  onPressed: () {},
-                                  child: const Text("Settlement", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                  onPressed: () {
+                                    // _settlement();
+                                  },
+                                  child: const Text(
+                                    "Settlement",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -94,13 +122,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF6200EA),
                                     foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
                                   ),
                                   onPressed: () {
-                                    Navigator.push(context, MaterialPageRoute(builder: (context) => const AddMatchPage()));
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const AddMatchPage(),
+                                      ),
+                                    );
                                   },
-                                  child: const Text("Add matches", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                  child: const Text(
+                                    "Add matches",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ],
@@ -118,7 +162,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             end: Alignment.bottomRight,
                           ),
                           boxShadow: [
-                            BoxShadow(color: const Color(0xFF6200EA).withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 5))
+                            BoxShadow(
+                              color: const Color(0xFF6200EA).withOpacity(0.3),
+                              blurRadius: 20,
+                              offset: const Offset(0, 5),
+                            ),
                           ],
                           borderRadius: BorderRadius.circular(24),
                         ),
@@ -129,7 +177,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               backgroundColor: Colors.white,
                               child: Text(
                                 user['email']?[0].toUpperCase() ?? "U",
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 26, color: Color(0xFF6200EA)),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 26,
+                                  color: Color(0xFF6200EA),
+                                ),
                               ),
                             ),
                             const SizedBox(width: 16),
@@ -139,12 +191,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 children: [
                                   Text(
                                     user['name'] ?? "",
-                                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                                    style: const TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     user['email'],
-                                    style: const TextStyle(color: Colors.white70, fontSize: 14),
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 14,
+                                    ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ],
@@ -155,11 +214,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 auth.logout();
                                 Navigator.pushAndRemoveUntil(
                                   context,
-                                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                                  MaterialPageRoute(
+                                    builder: (context) => const LoginScreen(),
+                                  ),
                                   (route) => false,
                                 );
                               },
-                              icon: const Icon(Icons.power_settings_new_rounded, color: Colors.white, size: 30),
+                              icon: const Icon(
+                                Icons.power_settings_new_rounded,
+                                color: Colors.white,
+                                size: 30,
+                              ),
                             ),
                           ],
                         ),
@@ -170,17 +235,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       /// STATS ROW
                       Row(
                         children: [
-                          Expanded(child: statBox("Profit", "₹${user['totalProfit']}", const Color(0xFF00E5FF))),
+                          Expanded(
+                            child: statBox(
+                              "Profit",
+                              "₹${user['totalProfit']}",
+                              const Color(0xFF00E5FF),
+                            ),
+                          ),
                           const SizedBox(width: 16),
-                          Expanded(child: statBox("Bets", "${user['totalBets']}", const Color(0xFFFF3D00))),
+                          Expanded(
+                            child: statBox(
+                              "Bets",
+                              "${user['totalBets']}",
+                              const Color(0xFFFF3D00),
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 16),
                       Row(
                         children: [
-                          Expanded(child: statBox("Wins", "${user['totalWins']}", Colors.greenAccent)),
+                          Expanded(
+                            child: statBox(
+                              "Wins",
+                              "${user['totalWins']}",
+                              Colors.greenAccent,
+                            ),
+                          ),
                           const SizedBox(width: 16),
-                          Expanded(child: statBox("Loss", "${user['totalLosses']}", Colors.pinkAccent)),
+                          Expanded(
+                            child: statBox(
+                              "Loss",
+                              "${user['totalLosses']}",
+                              Colors.pinkAccent,
+                            ),
+                          ),
                         ],
                       ),
 
@@ -200,17 +289,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text("My Bet History", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                                const Text(
+                                  "My Bet History",
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
                                 DropdownMenu<int>(
                                   initialSelection: showResult,
-                                  textStyle: const TextStyle(color: Colors.white),
-                                  inputDecorationTheme: const InputDecorationTheme(
-                                    isDense: true,
-                                    border: InputBorder.none,
+                                  textStyle: const TextStyle(
+                                    color: Colors.white,
                                   ),
+                                  inputDecorationTheme:
+                                      const InputDecorationTheme(
+                                        isDense: true,
+                                        border: InputBorder.none,
+                                      ),
                                   dropdownMenuEntries: const [
-                                    DropdownMenuEntry(value: 0, label: "Win / Pending"),
-                                    DropdownMenuEntry(value: 1, label: "My Losses"),
+                                    DropdownMenuEntry(
+                                      value: 0,
+                                      label: "Win / Pending",
+                                    ),
+                                    DropdownMenuEntry(
+                                      value: 1,
+                                      label: "My Losses",
+                                    ),
                                   ],
                                   onSelected: (value) {
                                     setState(() => showResult = value ?? 0);
@@ -222,22 +327,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             Builder(
                               builder: (context) {
                                 if (provider.myBetsHistory.isNotEmpty) {
-                                  List<Map<String, dynamic>> filteredBets = provider.myBetsHistory.where((bet) {
-                                    String res = bet['result'].toString().toLowerCase();
-                                    if (showResult == 0) {
-                                      return res == "win" || res == "pending";
-                                    } else {
-                                      return res == "loss";
-                                    }
-                                  }).toList();
+                                  List<Map<String, dynamic>> filteredBets =
+                                      provider.myBetsHistory.where((bet) {
+                                        String res = bet['result']
+                                            .toString()
+                                            .toLowerCase();
+                                        if (showResult == 0) {
+                                          return res == "win" ||
+                                              res == "pending";
+                                        } else {
+                                          return res == "loss";
+                                        }
+                                      }).toList();
 
                                   if (filteredBets.isEmpty) {
-                                    return const Center(child: Padding(padding: EdgeInsets.all(20), child: Text("No records found", style: TextStyle(color: Colors.white54))));
+                                    return const Center(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(20),
+                                        child: Text(
+                                          "No records found",
+                                          style: TextStyle(
+                                            color: Colors.white54,
+                                          ),
+                                        ),
+                                      ),
+                                    );
                                   }
 
                                   return ListView.builder(
                                     shrinkWrap: true,
-                                    physics: const NeverScrollableScrollPhysics(),
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
                                     itemCount: filteredBets.length,
                                     itemBuilder: (context, index) {
                                       final data = filteredBets[index];
@@ -251,7 +371,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     },
                                   );
                                 } else {
-                                  return const Center(child: Padding(padding: EdgeInsets.all(20), child: Text("No bets formulated yet", style: TextStyle(color: Colors.white54))));
+                                  return const Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(20),
+                                      child: Text(
+                                        "No bets formulated yet",
+                                        style: TextStyle(color: Colors.white54),
+                                      ),
+                                    ),
+                                  );
                                 }
                               },
                             ),
@@ -272,40 +400,93 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text("Other Players", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                            const Text(
+                              "Other Players",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
                             const SizedBox(height: 15),
-                            provider.otherUsers.isEmpty 
-                              ? const Center(child: Padding(padding: EdgeInsets.all(20), child: Text("No other players", style: TextStyle(color: Colors.white54))))
-                              : ListView.separated(
-                                  separatorBuilder: (context, index) => const Divider(color: Colors.white10, height: 20),
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  itemCount: provider.otherUsers.length,
-                                  itemBuilder: (context, index) {
-                                    final player = provider.otherUsers[index];
-                                    return ListTile(
-                                      contentPadding: EdgeInsets.zero,
-                                      leading: CircleAvatar(
-                                        radius: 24,
-                                        backgroundColor: const Color(0xFF6200EA).withOpacity(0.2),
-                                        child: Text(
-                                          (player['name'] ?? "U")[0].toUpperCase(), 
-                                          style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00E5FF))
+                            provider.otherUsers.isEmpty
+                                ? const Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(20),
+                                      child: Text(
+                                        "No other players",
+                                        style: TextStyle(color: Colors.white54),
+                                      ),
+                                    ),
+                                  )
+                                : ListView.separated(
+                                    separatorBuilder: (context, index) =>
+                                        const Divider(
+                                          color: Colors.white10,
+                                          height: 20,
                                         ),
-                                      ),
-                                      title: Text("${player['name']}", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                                      subtitle: const Text("Taps to view stats", style: TextStyle(color: Colors.white54, fontSize: 12)),
-                                      trailing: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        crossAxisAlignment: CrossAxisAlignment.end,
-                                        children: [
-                                          const Text("Profit", style: TextStyle(color: Colors.white54, fontSize: 12)),
-                                          Text("₹${player["totalProfit"] ?? 0}", style: const TextStyle(color: Color(0xFF00E5FF), fontWeight: FontWeight.bold, fontSize: 16)),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                ),
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    itemCount: provider.otherUsers.length,
+                                    itemBuilder: (context, index) {
+                                      final player = provider.otherUsers[index];
+                                      return ListTile(
+                                        contentPadding: EdgeInsets.zero,
+                                        leading: CircleAvatar(
+                                          radius: 24,
+                                          backgroundColor: const Color(
+                                            0xFF6200EA,
+                                          ).withOpacity(0.2),
+                                          child: Text(
+                                            (player['name'] ?? "U")[0]
+                                                .toUpperCase(),
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF00E5FF),
+                                            ),
+                                          ),
+                                        ),
+                                        title: Text(
+                                          "${player['name']}",
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        subtitle: const Text(
+                                          "Taps to view stats",
+                                          style: TextStyle(
+                                            color: Colors.white54,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                        trailing: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.end,
+                                          children: [
+                                            const Text(
+                                              "Profit",
+                                              style: TextStyle(
+                                                color: Colors.white54,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                            Text(
+                                              "₹${player["totalProfit"] ?? 0}",
+                                              style: const TextStyle(
+                                                color: Color(0xFF00E5FF),
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
                           ],
                         ),
                       ),
@@ -327,17 +508,60 @@ class _DashboardScreenState extends State<DashboardScreen> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: color.withOpacity(0.3)),
         boxShadow: [
-          BoxShadow(color: color.withOpacity(0.05), blurRadius: 15, spreadRadius: 2),
+          BoxShadow(
+            color: color.withOpacity(0.05),
+            blurRadius: 15,
+            spreadRadius: 2,
+          ),
         ],
       ),
       child: Column(
         children: [
-          Text(title, style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600, fontSize: 14)),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
+          ),
           const SizedBox(height: 8),
-          Text(value, style: TextStyle(color: color, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: 1)),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  void _settlement(String team, String matchId) async {
+    String? uid = FirebaseAuth.instance.currentUser?.uid;
+    String? userName =
+        context.read<AppProvider>().currentUserData?['name'] ?? "User";
+    if (uid == null) return;
+    // DocumentReference matchRef = _db.collection('matches').doc(matchId);
+
+    await _db.collection('matches').doc(matchId).update({
+      "winAmt": 0,
+      "winnerTeam": team,
+    });
+
+    await _db
+        .collection('users')
+        .doc(uid)
+        .collection('mybets')
+        .doc(matchId) //I added this may contains errors
+        .update({"result": "win", "profit": 0});
+
+    await _db.collection('users').doc(uid).update({
+      "totalBets": FieldValue.increment(1),
+    });
   }
 }
 
@@ -361,7 +585,9 @@ class BetTile extends StatelessWidget {
   Widget build(BuildContext context) {
     bool isWin = result.toLowerCase() == "win";
     bool isPending = result.toLowerCase() == "pending";
-    Color statusColor = isWin ? Colors.greenAccent : (isPending ? Colors.orangeAccent : Colors.pinkAccent);
+    Color statusColor = isWin
+        ? Colors.greenAccent
+        : (isPending ? Colors.orangeAccent : Colors.pinkAccent);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -378,22 +604,52 @@ class BetTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(match, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                Text(
+                  match,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text(date, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                Text(
+                  date,
+                  style: const TextStyle(color: Colors.white54, fontSize: 12),
+                ),
               ],
             ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text("Bet: $bet", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              Text(
+                "Bet: $bet",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 4),
               Row(
                 children: [
-                  Text(result, style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12)),
+                  Text(
+                    result,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
                   const SizedBox(width: 8),
-                  Text(amount, style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 14)),
+                  Text(
+                    amount,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
                 ],
               ),
             ],

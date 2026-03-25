@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:ipl2026/providers/app_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -29,7 +30,12 @@ class _HomeScreenState extends State<HomeScreen>
     });
   }
 
-  void _placeBet(String matchId, String team, bool isTeamA) async {
+  void _placeBet(
+    String matchId,
+    String team,
+    bool isTeamA,
+    String matches,
+  ) async {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -85,7 +91,7 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                   onPressed: () async {
                     Navigator.pop(context);
-                    _processBet(matchId, team, isTeamA, betAmount);
+                    _processBet(matchId, team, isTeamA, betAmount, matches);
                   },
                   child: Text(
                     "CONFIRM BET OF ₹$betAmount",
@@ -110,6 +116,7 @@ class _HomeScreenState extends State<HomeScreen>
     String team,
     bool isTeamA,
     double amount,
+    String matches,
   ) async {
     String? uid = FirebaseAuth.instance.currentUser?.uid;
     String? userName =
@@ -159,12 +166,20 @@ class _HomeScreenState extends State<HomeScreen>
         'date_time': DateTime.now().toIso8601String(),
       });
 
-      await _db.collection('users').doc(uid).collection('mybets').add({
-        "betted_team": team,
-        "matches": matchId,
-        "result": "Pending",
-        "profit": 0,
-        "match_date": DateTime.now().toIso8601String(),
+      await _db
+          .collection('users')
+          .doc(uid)
+          .collection('mybets')
+          .doc(matchId) //I added this may contains errors
+          .update({
+            "betted_team": team,
+            "matches": matches,
+            "result": "Pending",
+            "profit": 0,
+            "match_date": DateTime.now().toIso8601String(),
+          });
+      await _db.collection('users').doc(uid).update({
+        "totalBets": FieldValue.increment(1),
       });
 
       if (mounted) {
@@ -462,6 +477,7 @@ class _HomeScreenState extends State<HomeScreen>
                                                     tData.matchId,
                                                     tData.teamA,
                                                     true,
+                                                    "${tData.teamA} VS ${tData.teamB}",
                                                   ),
                                                 ),
                                               ),
@@ -477,6 +493,7 @@ class _HomeScreenState extends State<HomeScreen>
                                                     tData.matchId,
                                                     tData.teamB,
                                                     false,
+                                                    "${tData.teamA} VS ${tData.teamB}",
                                                   ),
                                                 ),
                                               ),
@@ -820,6 +837,18 @@ class _HomeScreenState extends State<HomeScreen>
                   children: [
                     const Text("🎯", style: TextStyle(fontSize: 14)),
                     const SizedBox(width: 10),
+
+                    Expanded(
+                      child: Text(
+                        DateFormat(
+                          'yyyy-MM-dd HH:mm:ss',
+                        ).format(DateTime.parse(log.dateTime)),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
                     Expanded(
                       child: Text(
                         "${log.name} voted",
