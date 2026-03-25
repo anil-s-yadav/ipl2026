@@ -1,79 +1,74 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:ipl2026/models/match_model.dart';
 
 class PastmatchesCard extends StatelessWidget {
-  // final String teamA;
-  // final String teamB;
-  // final String wonTeam;
-  // final String totalBetsAmt;
-  // final String wonBetsAnt;
-  // final DateTime date;
-  final Map<String, dynamic> pastMatche;
+  final MatchModel pastMatche;
 
   const PastmatchesCard({
     super.key,
     required this.pastMatche,
-    //   required this.teamA,
-    //   required this.teamB,
-    //   required this.wonTeam,
-    //   required this.totalBetsAmt,
-    //   required this.wonBetsAnt,
-    //   required this.date,
   });
 
   @override
   Widget build(BuildContext context) {
-    // final today = date.isAfter(DateTime.now());
-    // final now = DateTime.now();
-
-    // final isToday =
-    //     date.year == now.year && date.month == now.month && date.day == now.day;
-
-    // final isUpcoming = date.isAfter(now);
-
     return Container(
-      width: 150,
-      margin: const EdgeInsets.only(left: 16),
-      padding: const EdgeInsets.all(14),
-
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.red.shade100,
-        borderRadius: BorderRadius.circular(16),
+        color: const Color(0xFF1E2238),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, spreadRadius: 2)],
+        border: Border.all(color: Colors.white10, width: 1.5),
       ),
-
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            "${pastMatche['teamA']} vs ${pastMatche['teamB']}",
-            style: const TextStyle(fontWeight: FontWeight.bold),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "${pastMatche.teamA} VS ${pastMatche.teamB}",
+                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Colors.white, letterSpacing: 0.5),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: [Color(0xFFFF3D00), Color(0xFFFF9100)]),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [BoxShadow(color: const Color(0xFFFF3D00).withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 3))],
+                ),
+                child: Text(
+                  DateFormat('dd MMM yy').format(pastMatche.matchDate),
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1.0),
+                ),
+              ),
+            ],
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-
-            decoration: BoxDecoration(
-              color: Colors.blue,
-              borderRadius: BorderRadius.circular(20),
-            ),
-
-            child: Text(
-              DateFormat('dd MMM yyyy').format(pastMatche['matchDate']),
-              style: const TextStyle(color: Colors.white),
-            ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.emoji_events, color: Colors.amber, size: 20),
+                  const SizedBox(width: 8),
+                  Text("Winner: ${pastMatche.winnerTeam.isEmpty ? 'Pending' : pastMatche.winnerTeam}", 
+                       style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.amber)),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF00E5FF).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF00E5FF).withOpacity(0.3)),
+                ),
+                child: Text("Pool: ₹${pastMatche.totalPoolAmount}", 
+                     style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00E5FF))),
+              ),
+            ],
           ),
-          Text(
-            "Total Bet Amt: ${pastMatche['teamABetAmount']} ",
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          Text(
-            "Won team ${pastMatche['winnerTeam']} ",
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          Text(
-            "Price per head: ${(pastMatche['totalPoolAmount']) / (pastMatche['tetotalBetsCount'])} ",
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 10),
         ],
       ),
     );

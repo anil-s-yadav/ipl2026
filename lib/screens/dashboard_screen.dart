@@ -1,7 +1,6 @@
-import 'dart:developer';
-
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:ipl2026/providers/app_provider.dart';
 import 'package:ipl2026/screens/addmatchpage.dart';
 import 'package:ipl2026/screens/login_screen.dart';
 import 'package:ipl2026/services/auth_service.dart';
@@ -15,368 +14,304 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final AuthService auth = AuthService();
-  Map<String, dynamic>? user;
-  List<Map<String, dynamic>> otherUsers = [];
-  List<Map<String, dynamic>> myBetsHistory = [];
   int showResult = 0;
+
   @override
   void initState() {
     super.initState();
-    userData();
-  }
-
-  void userData() async {
-    final myData = await auth.getUserData();
-    final othersData = await auth.getAllUsersExceptMe();
-    final mybetshist = await auth.getMyBetsHis();
-    setState(() {
-      user = myData;
-      otherUsers = othersData;
-      myBetsHistory = mybetshist;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AppProvider>().initDashboardData();
     });
   }
 
-  bool isAdmin() {
+  bool isAdmin(Map<String, dynamic>? user) {
     return (user?['email'] == 'anilyadav44x@gmail.com');
-    // return (user?['email'] == 'anup_sharman70@yahu.co.in');
   }
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<AppProvider>();
+    final user = provider.currentUserData;
+
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 227, 235, 255),
+      backgroundColor: const Color(0xFF0B0F19),
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 226, 224, 255),
-        elevation: 0,
-        title: const Text("Dashboard"),
+        title: const Text("DASHBOARD", style: TextStyle(fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 2)),
         centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF6200EA), Color(0xFF00E5FF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        actions: [
+          IconButton(onPressed: () => provider.initDashboardData(), icon: const Icon(Icons.refresh, color: Colors.white)),
+          const SizedBox(width: 10),
+        ],
       ),
-
-      body: user == null
-          ? Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-
-                child: Column(
-                  children: [
-                    if (isAdmin())
-                      Row(
-                        children: [
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xff22C55E),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                            ),
-
-                            onPressed: () {},
-
-                            child: const Text(
-                              "Settlement",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => AddMatchPage(),
-                                ),
-                              );
-                            },
-                            child: Text("Add matches"),
-                          ),
-                        ],
-                      ),
-
-                    /// PROFILE
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [
-                            Color.fromARGB(255, 146, 37, 235),
-                            Color.fromARGB(255, 137, 27, 226),
-                            Color(0xff1D4ED8),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          CircleAvatar(
-                            radius: 30,
-                            backgroundColor: Colors.white,
-                            child: Text(
-                              user?['email']?[0].toUpperCase() ?? "U",
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 22,
-                              ),
-                            ),
-                          ),
-
-                          // const SizedBox(width: 15),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+      body: provider.isLoadingDashboard || user == null
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF00E5FF)))
+          : Container(
+              decoration: const BoxDecoration(
+                gradient: RadialGradient(
+                  colors: [Color(0xFF14192A), Color(0xFF0B0F19)],
+                  center: Alignment.topCenter,
+                  radius: 1.5,
+                ),
+              ),
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (isAdmin(user))
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 20),
+                          child: Row(
                             children: [
-                              Text(
-                                user?['name'] ?? "",
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                              Expanded(
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF00E5FF),
+                                    foregroundColor: Colors.black,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                  ),
+                                  onPressed: () {},
+                                  child: const Text("Settlement", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                                 ),
                               ),
-
-                              Text(
-                                user?['email'],
-                                style: const TextStyle(color: Colors.white70),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF6200EA),
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                  ),
+                                  onPressed: () {
+                                    Navigator.push(context, MaterialPageRoute(builder: (context) => const AddMatchPage()));
+                                  },
+                                  child: const Text("Add matches", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                ),
                               ),
                             ],
                           ),
-                          // const SizedBox(width: 15),
-                          IconButton(
-                            onPressed: () {
-                              auth.logout();
-                              Navigator.pushAndRemoveUntil(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const LoginScreen(),
-                                ),
-                                (route) => false,
-                              );
-                            },
-                            icon: Icon(Icons.logout_rounded, color: Colors.red),
+                        ),
+
+                      /// PROFILE
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF6200EA), Color(0xFF00E5FF)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
+                          boxShadow: [
+                            BoxShadow(color: const Color(0xFF6200EA).withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 5))
+                          ],
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 35,
+                              backgroundColor: Colors.white,
+                              child: Text(
+                                user['email']?[0].toUpperCase() ?? "U",
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 26, color: Color(0xFF6200EA)),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    user['name'] ?? "",
+                                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    user['email'],
+                                    style: const TextStyle(color: Colors.white70, fontSize: 14),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () {
+                                auth.logout();
+                                Navigator.pushAndRemoveUntil(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                                  (route) => false,
+                                );
+                              },
+                              icon: const Icon(Icons.power_settings_new_rounded, color: Colors.white, size: 30),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      /// STATS ROW
+                      Row(
+                        children: [
+                          Expanded(child: statBox("Profit", "₹${user['totalProfit']}", const Color(0xFF00E5FF))),
+                          const SizedBox(width: 16),
+                          Expanded(child: statBox("Bets", "${user['totalBets']}", const Color(0xFFFF3D00))),
                         ],
                       ),
-                    ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(child: statBox("Wins", "${user['totalWins']}", Colors.greenAccent)),
+                          const SizedBox(width: 16),
+                          Expanded(child: statBox("Loss", "${user['totalLosses']}", Colors.pinkAccent)),
+                        ],
+                      ),
 
-                    const SizedBox(height: 20),
+                      const SizedBox(height: 30),
 
-                    /// STATS ROW
-                    Row(
-                      children: [
-                        Expanded(
-                          child: statBox(
-                            "Profit",
-                            "₹${user?['totalProfit']}",
-                            Colors.green,
-                          ),
-                        ),
-
-                        const SizedBox(width: 12),
-
-                        Expanded(
-                          child: statBox(
-                            "Bets",
-                            "${user?['totalBets']}",
-                            Colors.orange,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    Row(
-                      children: [
-                        Expanded(
-                          child: statBox(
-                            "Wins",
-                            "${user?['totalWins']}",
-                            Colors.blue,
-                          ),
-                        ),
-
-                        const SizedBox(width: 12),
-
-                        Expanded(
-                          child: statBox(
-                            "Loss",
-                            "${user?['totalLosses']}",
-                            Colors.red,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    /// BET HISTORY
-                    SizedBox(
-                      height: 500,
-                      child: Container(
-                        width: MediaQuery.of(context).size.width * 0.95,
-                        padding: const EdgeInsets.all(16),
-
+                      /// BET HISTORY
+                      Container(
+                        padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: const Color.fromARGB(118, 169, 145, 255),
-                          borderRadius: BorderRadius.circular(20),
+                          color: const Color(0xFF14192A),
+                          border: Border.all(color: Colors.white10),
+                          borderRadius: BorderRadius.circular(24),
                         ),
-
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const SizedBox(height: 15),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text(
-                                  "My Bet History",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
+                                const Text("My Bet History", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                                DropdownMenu<int>(
+                                  initialSelection: showResult,
+                                  textStyle: const TextStyle(color: Colors.white),
+                                  inputDecorationTheme: const InputDecorationTheme(
+                                    isDense: true,
+                                    border: InputBorder.none,
                                   ),
-                                ),
-                                DropdownMenu(
-                                  initialSelection: 0,
                                   dropdownMenuEntries: const [
-                                    DropdownMenuEntry(
-                                      value: 0,
-                                      label: "My Wins",
-                                    ),
-                                    DropdownMenuEntry(
-                                      value: 1,
-                                      label: "My Losses",
-                                    ),
+                                    DropdownMenuEntry(value: 0, label: "Win / Pending"),
+                                    DropdownMenuEntry(value: 1, label: "My Losses"),
                                   ],
                                   onSelected: (value) {
-                                    setState(() {
-                                      showResult = value ?? 0;
-                                    });
+                                    setState(() => showResult = value ?? 0);
                                   },
                                 ),
                               ],
                             ),
-
                             const SizedBox(height: 15),
-
-                            // ✅ STEP 2 → ADD HERE
                             Builder(
                               builder: (context) {
-                                if (myBetsHistory.isNotEmpty) {
-                                  List<Map<String, dynamic>> filteredBets =
-                                      myBetsHistory.where((bet) {
-                                        if (showResult == 0) {
-                                          return bet['result']
-                                                  .toString()
-                                                  .toLowerCase() ==
-                                              "win";
-                                        } else {
-                                          return bet['result']
-                                                  .toString()
-                                                  .toLowerCase() ==
-                                              "loss";
-                                        }
-                                      }).toList();
+                                if (provider.myBetsHistory.isNotEmpty) {
+                                  List<Map<String, dynamic>> filteredBets = provider.myBetsHistory.where((bet) {
+                                    String res = bet['result'].toString().toLowerCase();
+                                    if (showResult == 0) {
+                                      return res == "win" || res == "pending";
+                                    } else {
+                                      return res == "loss";
+                                    }
+                                  }).toList();
 
-                                  return Expanded(
-                                    child: ListView.builder(
-                                      itemCount: filteredBets.length,
-                                      itemBuilder: (context, index) {
-                                        final data = filteredBets[index];
+                                  if (filteredBets.isEmpty) {
+                                    return const Center(child: Padding(padding: EdgeInsets.all(20), child: Text("No records found", style: TextStyle(color: Colors.white54))));
+                                  }
 
-                                        return BetTile(
-                                          date: "${data['match_date']}",
-                                          match: "${data['matches']}",
-                                          bet: "${data['betted_team']}",
-                                          result: "${data['result']}",
-                                          amount: "${data['profit']}",
-                                        );
-                                      },
-                                    ),
+                                  return ListView.builder(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    itemCount: filteredBets.length,
+                                    itemBuilder: (context, index) {
+                                      final data = filteredBets[index];
+                                      return BetTile(
+                                        date: "${data['match_date']}",
+                                        match: "${data['matches']}",
+                                        bet: "${data['betted_team']}",
+                                        result: "${data['result']}",
+                                        amount: "${data['profit']}",
+                                      );
+                                    },
                                   );
                                 } else {
-                                  return SizedBox.shrink();
+                                  return const Center(child: Padding(padding: EdgeInsets.all(20), child: Text("No bets formulated yet", style: TextStyle(color: Colors.white54))));
                                 }
                               },
                             ),
                           ],
                         ),
                       ),
-                    ),
 
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      height: 500,
-                      child: Container(
-                        width: MediaQuery.of(context).size.width * 0.95,
-                        padding: const EdgeInsets.all(16),
+                      const SizedBox(height: 24),
 
+                      /// OTHER PLAYERS
+                      Container(
+                        padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: const Color.fromARGB(255, 231, 225, 255),
-                          borderRadius: BorderRadius.circular(20),
+                          color: const Color(0xFF14192A),
+                          border: Border.all(color: Colors.white10),
+                          borderRadius: BorderRadius.circular(24),
                         ),
-
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              "Other Players",
-                              style: TextStyle(
-                                // color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-
+                            const Text("Other Players", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                             const SizedBox(height: 15),
-
-                            Expanded(
-                              child: ListView.builder(
-                                physics: ScrollPhysics(),
-                                itemCount: otherUsers.length,
-                                itemBuilder: (context, index) {
-                                  final player = otherUsers[index];
-                                  log(player.toString());
-                                  return ListTile(
-                                    title: Text("${player['name']}"),
-                                    subtitle: FittedBox(
-                                      child: Row(
-                                        spacing: 2,
+                            provider.otherUsers.isEmpty 
+                              ? const Center(child: Padding(padding: EdgeInsets.all(20), child: Text("No other players", style: TextStyle(color: Colors.white54))))
+                              : ListView.separated(
+                                  separatorBuilder: (context, index) => const Divider(color: Colors.white10, height: 20),
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: provider.otherUsers.length,
+                                  itemBuilder: (context, index) {
+                                    final player = provider.otherUsers[index];
+                                    return ListTile(
+                                      contentPadding: EdgeInsets.zero,
+                                      leading: CircleAvatar(
+                                        radius: 24,
+                                        backgroundColor: const Color(0xFF6200EA).withOpacity(0.2),
+                                        child: Text(
+                                          (player['name'] ?? "U")[0].toUpperCase(), 
+                                          style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00E5FF))
+                                        ),
+                                      ),
+                                      title: Text("${player['name']}", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                                      subtitle: const Text("Taps to view stats", style: TextStyle(color: Colors.white54, fontSize: 12)),
+                                      trailing: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        crossAxisAlignment: CrossAxisAlignment.end,
                                         children: [
-                                          Text(
-                                            "total Bets: ${player['totalBets']}",
-                                          ),
-
-                                          Text(
-                                            "total Losses: ${player['totalLosses']}",
-                                          ),
-
-                                          Text(
-                                            "total Wins: ${player['totalWins']}",
-                                          ),
+                                          const Text("Profit", style: TextStyle(color: Colors.white54, fontSize: 12)),
+                                          Text("₹${player["totalProfit"] ?? 0}", style: const TextStyle(color: Color(0xFF00E5FF), fontWeight: FontWeight.bold, fontSize: 16)),
                                         ],
                                       ),
-                                    ),
-                                    trailing: Text(
-                                      "total Profit: ₹${player["totalProfit"]}",
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
+                                    );
+                                  },
+                                ),
                           ],
                         ),
                       ),
-                    ),
-
-                    // const SizedBox(height: 20),
-
-                    /// SETTLEMENT BUTTON
-                  ],
+                      const SizedBox(height: 30),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -386,33 +321,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
   /// STATS BOX
   Widget statBox(String title, String value, Color color) {
     return Container(
-      padding: const EdgeInsets.all(18),
-
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       decoration: BoxDecoration(
-        color: const Color.fromARGB(41, 165, 62, 255),
-        borderRadius: BorderRadius.circular(18),
+        color: const Color(0xFF1A1F38),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(color: color.withOpacity(0.05), blurRadius: 15, spreadRadius: 2),
+        ],
       ),
-
       child: Column(
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.purple,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-
-          const SizedBox(height: 6),
-
-          Text(
-            value,
-            style: TextStyle(
-              color: color,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          Text(title, style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600, fontSize: 14)),
+          const SizedBox(height: 8),
+          Text(value, style: TextStyle(color: color, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: 1)),
         ],
       ),
     );
@@ -437,49 +359,44 @@ class BetTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    bool isWin = result.toLowerCase() == "win";
+    bool isPending = result.toLowerCase() == "pending";
+    Color statusColor = isWin ? Colors.greenAccent : (isPending ? Colors.orangeAccent : Colors.pinkAccent);
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 216, 233, 255),
-        borderRadius: BorderRadius.circular(14),
+        color: const Color(0xFF1A1F38),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white10),
       ),
-
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
         children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(match, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                const SizedBox(height: 4),
+                Text(date, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+              ],
+            ),
+          ),
           Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(date, style: const TextStyle(color: Colors.black)),
-              Text(match, style: const TextStyle(color: Colors.black)),
+              Text("Bet: $bet", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Text(result, style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12)),
+                  const SizedBox(width: 8),
+                  Text(amount, style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 14)),
+                ],
+              ),
             ],
-          ),
-
-          Text(
-            bet,
-            style: const TextStyle(
-              // color: Colors.bl,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-
-          Text(
-            result,
-            style: TextStyle(
-              color: result == "Win" ? Colors.green : Colors.red,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-
-          Text(
-            amount,
-            style: TextStyle(
-              color: result == "Win" ? Colors.green : Colors.red,
-              fontWeight: FontWeight.bold,
-            ),
           ),
         ],
       ),
