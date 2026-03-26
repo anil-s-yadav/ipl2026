@@ -34,7 +34,9 @@ class MatchModel {
   factory MatchModel.fromMap(Map<String, dynamic> map, String id) {
     return MatchModel(
       matchId: id,
-      matchDate: map['matchDate'] is Timestamp ? (map['matchDate'] as Timestamp).toDate() : (map['matchDate'] as DateTime? ?? DateTime.now()),
+      matchDate: map['matchDate'] is Timestamp
+          ? (map['matchDate'] as Timestamp).toDate()
+          : (map['matchDate'] as DateTime? ?? DateTime.now()),
       teamA: map['teamA'] ?? '',
       teamABetAmount: (map['teamABetAmount'] ?? 0).toDouble(),
       teamABetCount: (map['teamABetCount'] ?? 0).toDouble(),
@@ -43,7 +45,8 @@ class MatchModel {
       teamBBetAmount: (map['teamBBetAmount'] ?? 0).toDouble(),
       teamBBetCount: (map['teamBBetCount'] ?? 0).toDouble(),
       teamBbetUsers: List<String>.from(map['teamBbetUsers'] ?? []),
-      totalBetsCount: (map['totalBetsCount'] ?? map['tetotalBetsCount'] ?? 0).toDouble(),
+      totalBetsCount: (map['totalBetsCount'] ?? map['tetotalBetsCount'] ?? 0)
+          .toDouble(),
       totalPoolAmount: (map['totalPoolAmount'] ?? 0).toDouble(),
       winnerTeam: map['winnerTeam'] ?? '',
     );

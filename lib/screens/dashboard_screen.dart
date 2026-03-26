@@ -254,7 +254,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         children: [
                           Expanded(
                             child: statBox(
-                              "Wins",
+                              "Won",
                               "${user['totalWins']}",
                               Colors.greenAccent,
                             ),
@@ -262,7 +262,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           const SizedBox(width: 16),
                           Expanded(
                             child: statBox(
-                              "Loss",
+                              "Lost",
                               "${user['totalLosses']}",
                               Colors.pinkAccent,
                             ),
@@ -307,11 +307,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   dropdownMenuEntries: const [
                                     DropdownMenuEntry(
                                       value: 0,
-                                      label: "Win / Pending",
+                                      label: "won / Pending",
                                     ),
                                     DropdownMenuEntry(
                                       value: 1,
-                                      label: "My Losses",
+                                      label: "Lost matches",
                                     ),
                                   ],
                                   onSelected: (value) {
@@ -547,7 +547,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                "Wins: $totalWins",
+                "Won: $totalWins",
                 style: const TextStyle(
                   color: Colors.greenAccent,
                   fontWeight: FontWeight.bold,
@@ -555,7 +555,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                "Losses: $totalLosses",
+                "Lost: $totalLosses",
                 style: const TextStyle(
                   color: Colors.pinkAccent,
                   fontWeight: FontWeight.bold,
@@ -616,159 +616,231 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _handleSettlementPressed() async {
-    // Pick the latest pending match (winnerTeam == '') so admin doesn't need to choose matchId.
-    final DocumentSnapshot<Map<String, dynamic>>? matchSnap =
-        await _getLatestPendingMatch();
+    if (!mounted) return;
 
-    if (matchSnap == null || !matchSnap.exists) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("No pending matches found for settlement."),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      }
+    final matches = await _getTodayPendingMatches();
 
+    if (matches.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("No pending matches found for today."),
+          backgroundColor: Colors.orange,
+        ),
+      );
       return;
     }
 
-    final data = matchSnap.data()!;
-    final String teamA = (data['teamA'] ?? 'Team A').toString();
-    final String teamB = (data['teamB'] ?? 'Team B').toString();
+    String selectedMatchId = matches.first.id;
+    String? selectedWinnerTeam;
 
-    // Show popup to choose the winner team.
-    if (!mounted) return;
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) {
         bool isBusy = false;
+
         return StatefulBuilder(
-          builder: (context, setState) {
+          builder: (context, setDialogState) {
+            final selectedDoc = matches.firstWhere(
+              (d) => d.id == selectedMatchId,
+            );
+            final data = selectedDoc.data();
+            final String teamA = (data['teamA'] ?? 'Team A').toString();
+            final String teamB = (data['teamB'] ?? 'Team B').toString();
+
             return AlertDialog(
               backgroundColor: const Color(0xFF14192A),
               title: const Text(
-                "Choose Winner Team",
+                "Settlement - Select One Match",
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w900,
                 ),
               ),
-              content: isBusy
-                  ? const SizedBox(
-                      height: 80,
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: Color(0xFF00E5FF),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Match (teamA vs teamB)",
+                        style: TextStyle(
+                          color: Colors.white54,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                    )
-                  : Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "${teamA} vs ${teamB}",
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<String>(
+                        value: selectedMatchId,
+                        dropdownColor: const Color(0xFF1E2238),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                        ),
+                        decoration: const InputDecoration(
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
                           ),
+                          border: OutlineInputBorder(),
+                          labelText: "Select Match",
+                          labelStyle: TextStyle(color: Colors.white54),
                         ),
-                        const SizedBox(height: 14),
-                        const Text(
-                          "Total Pool will be distributed equally among winners.",
-                          style: TextStyle(color: Colors.white54, fontSize: 12),
+                        items: matches.map((m) {
+                          final d = m.data();
+                          final a = (d['teamA'] ?? 'Team A').toString();
+                          final b = (d['teamB'] ?? 'Team B').toString();
+                          return DropdownMenuItem(
+                            value: m.id,
+                            child: Text(
+                              "$a vs $b",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: isBusy
+                            ? null
+                            : (value) {
+                                if (value == null) return;
+                                setDialogState(() {
+                                  selectedMatchId = value;
+                                  selectedWinnerTeam = null;
+                                });
+                              },
+                      ),
+                      const SizedBox(height: 14),
+                      const Text(
+                        "Select winner team",
+                        style: TextStyle(
+                          color: Colors.white54,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
                         ),
-                      ],
-                    ),
-              actions: isBusy
-                  ? []
-                  : [
-                      TextButton(
-                        onPressed: () async {
-                          setState(() => isBusy = true);
-                          try {
-                            await _settlement(teamA, matchSnap.id);
-                            if (mounted) {
-                              Navigator.of(dialogContext).pop();
-                            }
-                            if (mounted) {
-                              await context
-                                  .read<AppProvider>()
-                                  .initDashboardData();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    "Settlement completed successfully.",
-                                  ),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                            }
-                          } catch (e) {
-                            if (mounted) {
-                              Navigator.of(dialogContext).pop();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text("Settlement failed: $e"),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
-                          }
-                        },
-                        child: Text(
-                          teamA,
-                          style: const TextStyle(
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<String>(
+                        value: selectedWinnerTeam,
+                        dropdownColor: const Color(0xFF1E2238),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                        ),
+                        decoration: const InputDecoration(
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          border: OutlineInputBorder(),
+                          labelText: "Winner Team",
+                          labelStyle: TextStyle(color: Colors.white54),
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: teamA,
+                            child: Text(
+                              teamA,
+                              style: const TextStyle(
+                                color: Color(0xFF00E5FF),
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                          DropdownMenuItem(
+                            value: teamB,
+                            child: Text(
+                              teamB,
+                              style: const TextStyle(
+                                color: Color(0xFFFF3D00),
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                        ],
+                        onChanged: isBusy
+                            ? null
+                            : (value) {
+                                setDialogState(() {
+                                  selectedWinnerTeam = value;
+                                });
+                              },
+                      ),
+                      const SizedBox(height: 14),
+                      if (isBusy)
+                        const Center(
+                          child: CircularProgressIndicator(
                             color: Color(0xFF00E5FF),
-                            fontWeight: FontWeight.w900,
                           ),
                         ),
-                      ),
-                      TextButton(
-                        onPressed: () async {
-                          setState(() => isBusy = true);
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isBusy
+                      ? null
+                      : () => Navigator.of(dialogContext).pop(),
+                  child: const Text(
+                    "Cancel",
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                ),
+                TextButton(
+                  onPressed: isBusy
+                      ? null
+                      : () async {
+                          if (selectedWinnerTeam == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Select winner team first."),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
+                            return;
+                          }
+
+                          setDialogState(() => isBusy = true);
                           try {
-                            await _settlement(teamB, matchSnap.id);
-                            if (mounted) {
-                              Navigator.of(dialogContext).pop();
-                            }
-                            if (mounted) {
-                              await context
-                                  .read<AppProvider>()
-                                  .initDashboardData();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    "Settlement completed successfully.",
-                                  ),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                            }
+                            await _settlement(
+                              selectedWinnerTeam!,
+                              selectedMatchId,
+                            );
+                            if (!mounted) return;
+                            Navigator.of(dialogContext).pop();
+                            await context
+                                .read<AppProvider>()
+                                .initDashboardData();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Settlement completed."),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
                           } catch (e) {
-                            if (mounted) {
-                              Navigator.of(dialogContext).pop();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text("Settlement failed: $e"),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
+                            if (!mounted) return;
+                            Navigator.of(dialogContext).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text("Settlement failed: $e"),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
                           }
                         },
-                        child: Text(
-                          teamB,
-                          style: const TextStyle(
-                            color: Color(0xFFFF3D00),
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                    ],
+                  child: const Text(
+                    "Settle",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ],
             );
           },
         );
@@ -776,29 +848,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Future<DocumentSnapshot<Map<String, dynamic>>?>
-  _getLatestPendingMatch() async {
-    final QuerySnapshot<Map<String, dynamic>> pending = await _db
+  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
+  _getTodayPendingMatches() async {
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, now.day);
+    final end = start.add(const Duration(days: 1));
+
+    // Query only by `matchDate` to avoid composite-index errors.
+    final QuerySnapshot<Map<String, dynamic>> allToday = await _db
         .collection('matches')
-        .where('winnerTeam', isEqualTo: '')
+        .where('matchDate', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
+        .where('matchDate', isLessThan: Timestamp.fromDate(end))
+        .orderBy('matchDate', descending: false)
         .get();
 
-    if (pending.docs.isEmpty) return null;
-
-    // Pick the latest matchDate (matchDate is stored as Timestamp).
-    final docs = pending.docs.toList();
-    docs.sort((a, b) {
-      final ad = a.data()['matchDate'];
-      final bd = b.data()['matchDate'];
-
-      final at = ad is Timestamp ? ad : null;
-      final bt = bd is Timestamp ? bd : null;
-
-      final aMillis = at?.toDate().millisecondsSinceEpoch ?? 0;
-      final bMillis = bt?.toDate().millisecondsSinceEpoch ?? 0;
-      return bMillis.compareTo(aMillis);
-    });
-    return docs.first;
+    // Filter pending matches in memory.
+    return allToday.docs.where((doc) {
+      final data = doc.data();
+      final w = data['winnerTeam'];
+      return w == null || (w is String && w.trim().isEmpty);
+    }).toList();
   }
 
   Future<void> _settlement(String team, String matchId) async {
@@ -874,7 +943,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final myBetsRef = userRef.collection('mybets').doc(matchId);
 
       batch.set(myBetsRef, {
-        "profit": 0,
+        "profit": -10,
         "result": "loss",
       }, SetOptions(merge: true));
 
@@ -998,7 +1067,7 @@ class BetTile extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    amount,
+                    "₹$amount",
                     style: TextStyle(
                       color: statusColor,
                       fontWeight: FontWeight.bold,

@@ -77,8 +77,7 @@ class _MatchLogsPageState extends State<MatchLogsPage> {
       ),
       body: isLoading
           ? const Center(
-              child:
-                  CircularProgressIndicator(color: Color(0xFF00E5FF)),
+              child: CircularProgressIndicator(color: Color(0xFF00E5FF)),
             )
           : Container(
               height: double.infinity,
@@ -110,10 +109,7 @@ class _MatchLogsPageState extends State<MatchLogsPage> {
                       child: Center(
                         child: Text(
                           "No bet logs found for this match.",
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 16,
-                          ),
+                          style: TextStyle(color: Colors.white70, fontSize: 16),
                         ),
                       ),
                     )
@@ -128,8 +124,11 @@ class _MatchLogsPageState extends State<MatchLogsPage> {
   Widget _detailsCard(MatchModel match) {
     final bool matchOver = match.winnerTeam.isNotEmpty;
 
-    Widget statChip(String label, String value,
-        {Color valueColor = Colors.white}) {
+    Widget statChip(
+      String label,
+      String value, {
+      Color valueColor = Colors.white,
+    }) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
@@ -185,10 +184,7 @@ class _MatchLogsPageState extends State<MatchLogsPage> {
               ),
               const SizedBox(height: 10),
               if (users.isEmpty)
-                const Text(
-                  "No users",
-                  style: TextStyle(color: Colors.white54),
-                )
+                const Text("No users", style: TextStyle(color: Colors.white54))
               else
                 ...users.map(
                   (u) => Padding(
@@ -261,15 +257,24 @@ class _MatchLogsPageState extends State<MatchLogsPage> {
             spacing: 10,
             runSpacing: 10,
             children: [
-              statChip("Total Pool", "₹${match.totalPoolAmount}",
-                  valueColor: Colors.greenAccent),
-              statChip("Total Bets", "${match.totalBetsCount}"),
-              statChip("Team A Pool", "₹${match.teamABetAmount}",
-                  valueColor: const Color(0xFF00E5FF)),
-              statChip("Team A Votes", "${match.teamABetCount}"),
-              statChip("Team B Pool", "₹${match.teamBBetAmount}",
-                  valueColor: const Color(0xFFFF3D00)),
-              statChip("Team B Votes", "${match.teamBBetCount}"),
+              statChip(
+                "Total Pool",
+                "₹${match.totalPoolAmount}",
+                valueColor: Colors.greenAccent,
+              ),
+              statChip("Total Bets", "${match.totalBetsCount.toInt()}"),
+              statChip(
+                "Team A Pool",
+                "₹${match.teamABetAmount}",
+                valueColor: const Color(0xFF00E5FF),
+              ),
+              statChip("Team A Bets", "${match.teamABetCount.toInt()}"),
+              statChip(
+                "Team B Pool",
+                "₹${match.teamBBetAmount}",
+                valueColor: const Color(0xFFFF3D00),
+              ),
+              statChip("Team B Bets", "${match.teamBBetCount.toInt()}"),
             ],
           ),
           const SizedBox(height: 14),
@@ -299,16 +304,14 @@ class _MatchLogsPageState extends State<MatchLogsPage> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF1A1F38),
-        border: Border.all(
-          color: const Color(0xFF00E5FF).withOpacity(0.3),
-        ),
+        border: Border.all(color: const Color(0xFF00E5FF).withOpacity(0.3)),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF00E5FF).withOpacity(0.05),
             blurRadius: 10,
             spreadRadius: 1,
-          )
+          ),
         ],
       ),
       child: Column(
@@ -326,8 +329,10 @@ class _MatchLogsPageState extends State<MatchLogsPage> {
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFF3D00).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -345,12 +350,9 @@ class _MatchLogsPageState extends State<MatchLogsPage> {
           const SizedBox(height: 8),
           Row(
             children: [
-              const Text(
-                "Voted for: ",
-                style: TextStyle(color: Colors.white54),
-              ),
+              const Text("Betd for: ", style: TextStyle(color: Colors.white54)),
               Text(
-                log.votedTeam.isEmpty ? "None" : log.votedTeam,
+                log.BetdTeam.isEmpty ? "None" : log.BetdTeam,
                 style: const TextStyle(
                   color: Color(0xFF00E5FF),
                   fontWeight: FontWeight.bold,

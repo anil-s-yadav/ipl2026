@@ -28,7 +28,9 @@ class AppProvider with ChangeNotifier {
     try {
       currentUserData = await _auth.getUserData();
       var rawData = await _auth.getAllMatches();
-      allMatches = rawData.map((e) => MatchModel.fromMap(e, e['match_id'])).toList();
+      allMatches = rawData
+          .map((e) => MatchModel.fromMap(e, e['match_id']))
+          .toList();
 
       DateTime now = DateTime.now();
       bool isSameDay(DateTime a, DateTime b) {
@@ -56,13 +58,17 @@ class AppProvider with ChangeNotifier {
 
       allMatches = [...today, ...upcoming, ...past];
 
-      var rawLog1 = today.isNotEmpty ? await _auth.getLogsByMatchId(today[0].matchId) : <Map<String, dynamic>>[];
-      var rawLog2 = today.length > 1 ? await _auth.getLogsByMatchId(today[1].matchId) : <Map<String, dynamic>>[];
+      var rawLog1 = today.isNotEmpty
+          ? await _auth.getLogsByMatchId(today[0].matchId)
+          : <Map<String, dynamic>>[];
+      var rawLog2 = today.length > 1
+          ? await _auth.getLogsByMatchId(today[1].matchId)
+          : <Map<String, dynamic>>[];
 
       match1Logs = rawLog1.map((e) => LogModel.fromMap(e)).toList();
       match2Logs = rawLog2.map((e) => LogModel.fromMap(e)).toList();
 
-      // Newest first (who voted last on top). Since `date_time` is ISO-8601,
+      // Newest first (who Betd last on top). Since `date_time` is ISO-8601,
       // string compare matches chronological order.
       match1Logs.sort((a, b) => b.dateTime.compareTo(a.dateTime));
       match2Logs.sort((a, b) => b.dateTime.compareTo(a.dateTime));
@@ -79,9 +85,7 @@ class AppProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      if (currentUserData == null) {
-        currentUserData = await _auth.getUserData();
-      }
+      currentUserData ??= await _auth.getUserData();
       otherUsers = await _auth.getAllUsersExceptMe();
       myBetsHistory = await _auth.getMyBetsHis();
     } catch (e) {

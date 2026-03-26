@@ -16,6 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   final AuthService _auth = AuthService();
+  bool _isLoggingIn = false;
 
   @override
   void dispose() {
@@ -64,7 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 10),
 
                     const Text(
-                      "IPL Vote",
+                      "IPL Bet",
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
@@ -132,29 +133,46 @@ class _LoginScreenState extends State<LoginScreen> {
                       width: double.infinity,
                       height: 55,
                       child: ElevatedButton(
-                        onPressed: () async {
-                          if (_formKey.currentState!.validate()) {
-                            String? result = await _auth.login(
-                              email: emailController.text,
-                              password: passwordController.text,
-                            );
-                            if (result == null) {
-                              LocalStoragePref.instance!.setLoginBool(true);
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => MainScreen(),
-                                ),
-                              );
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text("Please try again!\n$result"),
-                                ),
-                              );
-                            }
-                          }
-                        },
+                        onPressed: _isLoggingIn
+                            ? null
+                            : () async {
+                                if (!_formKey.currentState!.validate()) {
+                                  return;
+                                }
+
+                                setState(() => _isLoggingIn = true);
+                                try {
+                                  String? result = await _auth.login(
+                                    email: emailController.text,
+                                    password: passwordController.text,
+                                  );
+
+                                  if (!mounted) return;
+
+                                  if (result == null) {
+                                    LocalStoragePref.instance!.setLoginBool(
+                                      true,
+                                    );
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => MainScreen(),
+                                      ),
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          "Please try again!\n$result",
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                } finally {
+                                  if (!mounted) return;
+                                  setState(() => _isLoggingIn = false);
+                                }
+                              },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xffFFD700),
                           foregroundColor: Colors.black,
@@ -163,14 +181,25 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           elevation: 10,
                         ),
-                        child: const Text(
-                          "LOGIN",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1,
-                          ),
-                        ),
+                        child: _isLoggingIn
+                            ? const SizedBox(
+                                height: 18,
+                                width: 18,
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.black,
+                                  ),
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text(
+                                "LOGIN",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1,
+                                ),
+                              ),
                       ),
                     ),
 

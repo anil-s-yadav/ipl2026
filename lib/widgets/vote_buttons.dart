@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:ipl2026/screens/login_screen.dart';
 
-class VoteButtons extends StatelessWidget {
-  const VoteButtons({super.key});
+class BetButtons extends StatelessWidget {
+  const BetButtons({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -182,7 +182,9 @@ class AuthService {
           "teamBBetAmount": data["teamBBetAmount"],
           "teamBBetCount": data["teamBBetCount"],
           "teamBbetUsers": data["teamBbetUsers"],
-          "totalBetsCount": data["tetotalBetsCount"],
+          // Correct field name is `totalBetsCount` (typo existed as `tetotalBetsCount`).
+          "totalBetsCount":
+              data["totalBetsCount"] ?? data["tetotalBetsCount"] ?? 0.0,
           "totalPoolAmount": data["totalPoolAmount"],
           "winnerTeam": data["winnerTeam"],
         };
@@ -230,7 +232,7 @@ class AuthService {
   //       "date_time": data["date_time"] ?? "",
   //       "name": data["name"] ?? "",
   //       "status": data["status"] ?? "",
-  //       "voted_team": data["voted_team"] ?? "",
+  //       "Betd_team": data["Betd_team"] ?? "",
   //     };
   //   } catch (e) {
   //     print("Error fetching log: $e");

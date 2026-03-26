@@ -4,6 +4,7 @@ import 'package:ipl2026/providers/app_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:ipl2026/screens/match_logs_page.dart';
 import 'package:ipl2026/widgets/pastmatches_card.dart';
 import 'package:ipl2026/models/log_model.dart';
@@ -160,8 +161,9 @@ class _HomeScreenState extends State<HomeScreen>
         List<dynamic> teamAUsers = List.from(data['teamAbetUsers'] ?? []);
         List<dynamic> teamBUsers = List.from(data['teamBbetUsers'] ?? []);
 
-        if (teamAUsers.contains(userName) || teamBUsers.contains(userName))
+        if (teamAUsers.contains(userName) || teamBUsers.contains(userName)) {
           return;
+        }
 
         if (isTeamA) {
           teamAUsers.add(userName);
@@ -201,7 +203,7 @@ class _HomeScreenState extends State<HomeScreen>
 
       await _db.collection('logs').doc(matchId).collection('entries').add({
         'name': userName,
-        'voted_team': team,
+        'Betd_team': team,
         'amount': amount,
         'date_time': DateTime.now().toIso8601String(),
       });
@@ -308,6 +310,51 @@ class _HomeScreenState extends State<HomeScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Center(
+                        child: Container(
+                          margin: const EdgeInsets.all(5),
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E2238),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.05),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                "Note:",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              if (kIsWeb) const SizedBox(height: 10),
+                              if (kIsWeb)
+                                Text(
+                                  "Use the mobile application for better experience and reliability.",
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 13,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              if (kIsWeb) const SizedBox(height: 6),
+                              Text(
+                                "Take actions carefully: actions are not reversible.",
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 13,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                       _buildSectionTitle("Upcoming Matches 🏏"),
                       SizedBox(
                         height: 160,
@@ -350,12 +397,14 @@ class _HomeScreenState extends State<HomeScreen>
                           List<String> teamAUsers = tData.teamAbetUsers;
                           List<String> teamBUsers = tData.teamBbetUsers;
 
-                          String votedTeam = "";
+                          String BetdTeam = "";
                           if (currentUserName != null) {
-                            if (teamAUsers.contains(currentUserName))
-                              votedTeam = tData.teamA;
-                            if (teamBUsers.contains(currentUserName))
-                              votedTeam = tData.teamB;
+                            if (teamAUsers.contains(currentUserName)) {
+                              BetdTeam = tData.teamA;
+                            }
+                            if (teamBUsers.contains(currentUserName)) {
+                              BetdTeam = tData.teamB;
+                            }
                           }
 
                           bool matchOver = tData.winnerTeam.isNotEmpty;
@@ -452,7 +501,7 @@ class _HomeScreenState extends State<HomeScreen>
                                               ),
                                             ),
                                           )
-                                        else if (votedTeam.isNotEmpty) // Voted!
+                                        else if (BetdTeam.isNotEmpty) // Betd!
                                           Container(
                                             padding: const EdgeInsets.symmetric(
                                               horizontal: 20,
@@ -480,7 +529,7 @@ class _HomeScreenState extends State<HomeScreen>
                                                 ),
                                                 const SizedBox(width: 8),
                                                 Text(
-                                                  "You voted for $votedTeam",
+                                                  "You Betd for $BetdTeam",
                                                   style: const TextStyle(
                                                     fontSize: 16,
                                                     color: Color(0xFF00E5FF),
@@ -504,13 +553,13 @@ class _HomeScreenState extends State<HomeScreen>
                                         const SizedBox(height: 24),
 
                                         if (!matchOver &&
-                                            votedTeam.isEmpty) // Not voted yet!
+                                            BetdTeam.isEmpty) // Not Betd yet!
                                           Row(
                                             mainAxisAlignment:
                                                 MainAxisAlignment.spaceEvenly,
                                             children: [
                                               Expanded(
-                                                child: _buildVoteButton(
+                                                child: _buildBetButton(
                                                   tData.teamA,
                                                   const [
                                                     Color(0xFF2196F3),
@@ -530,7 +579,7 @@ class _HomeScreenState extends State<HomeScreen>
                                               ),
                                               const SizedBox(width: 16),
                                               Expanded(
-                                                child: _buildVoteButton(
+                                                child: _buildBetButton(
                                                   tData.teamB,
                                                   const [
                                                     Color(0xFFFF512F),
@@ -578,7 +627,7 @@ class _HomeScreenState extends State<HomeScreen>
                                                 ),
                                               ),
                                               _buildStatsRow(
-                                                "Votes",
+                                                "Bets",
                                                 "${tData.teamABetCount.toInt()}",
                                                 "${tData.teamBBetCount.toInt()}",
                                               ),
@@ -617,7 +666,7 @@ class _HomeScreenState extends State<HomeScreen>
                                         const SizedBox(height: 20),
 
                                         const Text(
-                                          "RECENT VOTERS",
+                                          "RECENT BetRS",
                                           style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                             color: Colors.white38,
@@ -773,7 +822,7 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget _buildVoteButton(
+  Widget _buildBetButton(
     String label,
     List<Color> colors,
     VoidCallback? onTap,
@@ -928,7 +977,7 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
                     Expanded(
                       child: Text(
-                        "${log.name} voted",
+                        "${log.name} Bet",
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 14,
@@ -945,7 +994,7 @@ class _HomeScreenState extends State<HomeScreen>
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        log.votedTeam,
+                        log.BetdTeam,
                         style: const TextStyle(
                           color: Color(0xFFB388FF),
                           fontWeight: FontWeight.bold,

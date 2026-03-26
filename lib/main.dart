@@ -17,9 +17,7 @@ Future<void> main() async {
 
   runApp(
     MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AppProvider()),
-      ],
+      providers: [ChangeNotifierProvider(create: (_) => AppProvider())],
       child: MyApp(isLoggedIn: isLoggedIn),
     ),
   );
@@ -42,7 +40,6 @@ class MyApp extends StatelessWidget {
           primary: Color(0xFF00E5FF),
           secondary: Color(0xFFFF3D00),
           surface: Color(0xFF1A1F38),
-          background: Color(0xFF0B0F19),
         ),
         fontFamily: 'Roboto', // Default fallback, but sets a clean vibe
       ),
@@ -73,7 +70,10 @@ class _MainScreenState extends State<MainScreen> {
           indicatorColor: const Color(0xFF00E5FF).withOpacity(0.2),
           labelTextStyle: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
-              return const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00E5FF));
+              return const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF00E5FF),
+              );
             }
             return const TextStyle(color: Colors.white54);
           }),
