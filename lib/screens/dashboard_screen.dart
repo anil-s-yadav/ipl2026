@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ipl2026/providers/app_provider.dart';
@@ -104,9 +103,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       vertical: 14,
                                     ),
                                   ),
-                                  onPressed: () {
-                                    // _settlement();
-                                  },
+                                  onPressed: () => _handleSettlementPressed(),
                                   child: const Text(
                                     "Settlement",
                                     style: TextStyle(
@@ -433,6 +430,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       final player = provider.otherUsers[index];
                                       return ListTile(
                                         contentPadding: EdgeInsets.zero,
+                                        onTap: () =>
+                                            _showOtherUserStatesDialog(player),
                                         leading: CircleAvatar(
                                           radius: 24,
                                           backgroundColor: const Color(
@@ -499,6 +498,82 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  void _showOtherUserStatesDialog(Map<String, dynamic> player) {
+    final String name = player['name'] ?? 'Unknown';
+    final String email = player['email'] ?? '';
+
+    final String totalProfit = '₹${player['totalProfit'] ?? 0}';
+    final String totalBets = '${player['totalBets'] ?? 0}';
+    final String totalWins = '${player['totalWins'] ?? 0}';
+    final String totalLosses = '${player['totalLosses'] ?? 0}';
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: const Color(0xFF14192A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Text(
+          name,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (email.isNotEmpty)
+                Text(
+                  email,
+                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                ),
+              if (email.isNotEmpty) const SizedBox(height: 10),
+              Text(
+                "Profit: $totalProfit",
+                style: const TextStyle(
+                  color: Color(0xFF00E5FF),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Bets: $totalBets",
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Wins: $totalWins",
+                style: const TextStyle(
+                  color: Colors.greenAccent,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Losses: $totalLosses",
+                style: const TextStyle(
+                  color: Colors.pinkAccent,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text("Close", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// STATS BOX
   Widget statBox(String title, String value, Color color) {
     return Container(
@@ -540,28 +615,308 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  void _settlement(String team, String matchId) async {
-    String? uid = FirebaseAuth.instance.currentUser?.uid;
-    String? userName =
-        context.read<AppProvider>().currentUserData?['name'] ?? "User";
-    if (uid == null) return;
-    // DocumentReference matchRef = _db.collection('matches').doc(matchId);
+  Future<void> _handleSettlementPressed() async {
+    // Pick the latest pending match (winnerTeam == '') so admin doesn't need to choose matchId.
+    final DocumentSnapshot<Map<String, dynamic>>? matchSnap =
+        await _getLatestPendingMatch();
 
-    await _db.collection('matches').doc(matchId).update({
-      "winAmt": 0,
-      "winnerTeam": team,
+    if (matchSnap == null || !matchSnap.exists) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("No pending matches found for settlement."),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+
+      return;
+    }
+
+    final data = matchSnap.data()!;
+    final String teamA = (data['teamA'] ?? 'Team A').toString();
+    final String teamB = (data['teamB'] ?? 'Team B').toString();
+
+    // Show popup to choose the winner team.
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        bool isBusy = false;
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF14192A),
+              title: const Text(
+                "Choose Winner Team",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              content: isBusy
+                  ? const SizedBox(
+                      height: 80,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: Color(0xFF00E5FF),
+                        ),
+                      ),
+                    )
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "${teamA} vs ${teamB}",
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        const Text(
+                          "Total Pool will be distributed equally among winners.",
+                          style: TextStyle(color: Colors.white54, fontSize: 12),
+                        ),
+                      ],
+                    ),
+              actions: isBusy
+                  ? []
+                  : [
+                      TextButton(
+                        onPressed: () async {
+                          setState(() => isBusy = true);
+                          try {
+                            await _settlement(teamA, matchSnap.id);
+                            if (mounted) {
+                              Navigator.of(dialogContext).pop();
+                            }
+                            if (mounted) {
+                              await context
+                                  .read<AppProvider>()
+                                  .initDashboardData();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    "Settlement completed successfully.",
+                                  ),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              Navigator.of(dialogContext).pop();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text("Settlement failed: $e"),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        child: Text(
+                          teamA,
+                          style: const TextStyle(
+                            color: Color(0xFF00E5FF),
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          setState(() => isBusy = true);
+                          try {
+                            await _settlement(teamB, matchSnap.id);
+                            if (mounted) {
+                              Navigator.of(dialogContext).pop();
+                            }
+                            if (mounted) {
+                              await context
+                                  .read<AppProvider>()
+                                  .initDashboardData();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    "Settlement completed successfully.",
+                                  ),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              Navigator.of(dialogContext).pop();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text("Settlement failed: $e"),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        child: Text(
+                          teamB,
+                          style: const TextStyle(
+                            color: Color(0xFFFF3D00),
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<DocumentSnapshot<Map<String, dynamic>>?>
+  _getLatestPendingMatch() async {
+    final QuerySnapshot<Map<String, dynamic>> pending = await _db
+        .collection('matches')
+        .where('winnerTeam', isEqualTo: '')
+        .get();
+
+    if (pending.docs.isEmpty) return null;
+
+    // Pick the latest matchDate (matchDate is stored as Timestamp).
+    final docs = pending.docs.toList();
+    docs.sort((a, b) {
+      final ad = a.data()['matchDate'];
+      final bd = b.data()['matchDate'];
+
+      final at = ad is Timestamp ? ad : null;
+      final bt = bd is Timestamp ? bd : null;
+
+      final aMillis = at?.toDate().millisecondsSinceEpoch ?? 0;
+      final bMillis = bt?.toDate().millisecondsSinceEpoch ?? 0;
+      return bMillis.compareTo(aMillis);
     });
+    return docs.first;
+  }
 
-    await _db
-        .collection('users')
-        .doc(uid)
-        .collection('mybets')
-        .doc(matchId) //I added this may contains errors
-        .update({"result": "win", "profit": 0});
+  Future<void> _settlement(String team, String matchId) async {
+    final matchRef = _db.collection('matches').doc(matchId);
+    final matchSnap = await matchRef.get();
+    if (!matchSnap.exists) return;
 
-    await _db.collection('users').doc(uid).update({
-      "totalBets": FieldValue.increment(1),
-    });
+    final matchData = matchSnap.data() as Map<String, dynamic>;
+
+    final double totalPoolAmount = (matchData['totalPoolAmount'] ?? 0)
+        .toDouble();
+    final double teamACount = (matchData['teamABetCount'] ?? 0).toDouble();
+    final double teamBCount = (matchData['teamBBetCount'] ?? 0).toDouble();
+
+    final List<String> teamAUsers = List<String>.from(
+      (matchData['teamAbetUsers'] ?? const <dynamic>[]).toList(),
+    );
+    final List<String> teamBUsers = List<String>.from(
+      (matchData['teamBbetUsers'] ?? const <dynamic>[]).toList(),
+    );
+
+    final String teamA = (matchData['teamA'] ?? 'Team A').toString();
+
+    final bool isTeamAWinner = team == teamA;
+    final double winnerCount = isTeamAWinner ? teamACount : teamBCount;
+    final List<String> winnerUsers = isTeamAWinner ? teamAUsers : teamBUsers;
+    final List<String> loserUsers = isTeamAWinner ? teamBUsers : teamAUsers;
+
+    if (winnerCount <= 0) {
+      throw Exception("Winner bet count is zero; cannot distribute pool.");
+    }
+
+    // Divide total pool equally among winning bettors.
+    final double perWinnerAmt = totalPoolAmount / winnerCount;
+
+    // Map bettor name -> user document id (uid) by querying `users` where `name` matches.
+    final Map<String, String> nameToUid = await _getUserIdsByNames([
+      ...winnerUsers,
+      ...loserUsers,
+    ]);
+
+    final WriteBatch batch = _db.batch();
+
+    // Update match settlement data.
+    batch.update(matchRef, {"winAmt": perWinnerAmt, "winnerTeam": team});
+
+    // Update winning bettors.
+    for (final bettorName in winnerUsers) {
+      final String? uid = nameToUid[bettorName];
+      if (uid == null) continue;
+
+      final userRef = _db.collection('users').doc(uid);
+      final myBetsRef = userRef.collection('mybets').doc(matchId);
+
+      batch.set(myBetsRef, {
+        "profit": perWinnerAmt,
+        "result": "win",
+      }, SetOptions(merge: true));
+
+      batch.set(userRef, {
+        "totalWins": FieldValue.increment(1),
+        "totalProfit": FieldValue.increment(perWinnerAmt),
+        // totalBets is already incremented at bet time in HomeScreen.
+      }, SetOptions(merge: true));
+    }
+
+    // Update losing bettors.
+    for (final bettorName in loserUsers) {
+      final String? uid = nameToUid[bettorName];
+      if (uid == null) continue;
+
+      final userRef = _db.collection('users').doc(uid);
+      final myBetsRef = userRef.collection('mybets').doc(matchId);
+
+      batch.set(myBetsRef, {
+        "profit": 0,
+        "result": "loss",
+      }, SetOptions(merge: true));
+
+      batch.set(userRef, {
+        "totalLosses": FieldValue.increment(1),
+        // totalProfit is not changed for losers (profit = 0).
+      }, SetOptions(merge: true));
+    }
+
+    await batch.commit();
+  }
+
+  Future<Map<String, String>> _getUserIdsByNames(List<String> names) async {
+    final uniqueNames = names
+        .where((e) => e.trim().isNotEmpty)
+        .toSet()
+        .toList();
+    final Map<String, String> out = {};
+
+    // Firestore whereIn supports up to 10 values per query.
+    const int chunkSize = 10;
+    for (var i = 0; i < uniqueNames.length; i += chunkSize) {
+      final chunk = uniqueNames.sublist(
+        i,
+        i + chunkSize > uniqueNames.length ? uniqueNames.length : i + chunkSize,
+      );
+
+      final QuerySnapshot<Map<String, dynamic>> snap = await _db
+          .collection('users')
+          .where('name', whereIn: chunk)
+          .get();
+
+      for (final doc in snap.docs) {
+        final docData = doc.data();
+        final name = docData['name'];
+        if (name is String && name.trim().isNotEmpty) {
+          out[name] = doc.id;
+        }
+      }
+    }
+
+    return out;
   }
 }
 

@@ -61,6 +61,11 @@ class AppProvider with ChangeNotifier {
 
       match1Logs = rawLog1.map((e) => LogModel.fromMap(e)).toList();
       match2Logs = rawLog2.map((e) => LogModel.fromMap(e)).toList();
+
+      // Newest first (who voted last on top). Since `date_time` is ISO-8601,
+      // string compare matches chronological order.
+      match1Logs.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+      match2Logs.sort((a, b) => b.dateTime.compareTo(a.dateTime));
     } catch (e) {
       debugPrint("Error loading home data: $e");
     }

@@ -5,9 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:ipl2026/screens/match_logs_page.dart';
-import 'package:ipl2026/services/auth_service.dart';
 import 'package:ipl2026/widgets/pastmatches_card.dart';
-import 'package:ipl2026/models/match_model.dart';
 import 'package:ipl2026/models/log_model.dart';
 import '../widgets/match_card.dart';
 
@@ -22,6 +20,10 @@ class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
+  // Prevent double-bets while the async Firestore writes are still running.
+  bool _isBetting = false;
+  String? _activeBettingMatchId;
+
   @override
   void initState() {
     super.initState();
@@ -30,7 +32,7 @@ class _HomeScreenState extends State<HomeScreen>
     });
   }
 
-  void _placeBet(
+  Future<void> _placeBet(
     String matchId,
     String team,
     bool isTeamA,
@@ -90,8 +92,30 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
                   ),
                   onPressed: () async {
+                    // Prevent double-submits from fast taps while bet is running.
+                    if (_isBetting) return;
+
+                    setState(() {
+                      _isBetting = true;
+                      _activeBettingMatchId = matchId;
+                    });
+
                     Navigator.pop(context);
-                    _processBet(matchId, team, isTeamA, betAmount, matches);
+                    try {
+                      await _processBet(
+                        matchId,
+                        team,
+                        isTeamA,
+                        betAmount,
+                        matches,
+                      );
+                    } finally {
+                      if (!mounted) return;
+                      setState(() {
+                        _isBetting = false;
+                        _activeBettingMatchId = null;
+                      });
+                    }
                   },
                   child: Text(
                     "CONFIRM BET OF ₹$betAmount",
@@ -111,7 +135,7 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  void _processBet(
+  Future<void> _processBet(
     String matchId,
     String team,
     bool isTeamA,
@@ -125,6 +149,7 @@ class _HomeScreenState extends State<HomeScreen>
 
     try {
       DocumentReference matchRef = _db.collection('matches').doc(matchId);
+      bool betRecorded = false;
 
       await _db.runTransaction((transaction) async {
         DocumentSnapshot snapshot = await transaction.get(matchRef);
@@ -157,7 +182,22 @@ class _HomeScreenState extends State<HomeScreen>
             'totalPoolAmount': (data['totalPoolAmount'] ?? 0.0) + amount,
           });
         }
+
+        betRecorded = true;
       });
+
+      if (!betRecorded) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("You already placed a bet on this match."),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        // Still refresh to reflect server state if needed.
+        await context.read<AppProvider>().initHomeData();
+        return;
+      }
 
       await _db.collection('logs').doc(matchId).collection('entries').add({
         'name': userName,
@@ -166,24 +206,27 @@ class _HomeScreenState extends State<HomeScreen>
         'date_time': DateTime.now().toIso8601String(),
       });
 
+      // Use set(merge:true) so the UI refresh doesn't break if the doc doesn't exist yet.
       await _db
           .collection('users')
           .doc(uid)
           .collection('mybets')
-          .doc(matchId) //I added this may contains errors
-          .update({
+          .doc(matchId)
+          .set({
             "betted_team": team,
             "matches": matches,
             "result": "Pending",
             "profit": 0,
             "match_date": DateTime.now().toIso8601String(),
-          });
+          }, SetOptions(merge: true));
+
+      // NOTE: Match bet already increments match totals; this is user-level stats.
       await _db.collection('users').doc(uid).update({
         "totalBets": FieldValue.increment(1),
       });
 
       if (mounted) {
-        context.read<AppProvider>().initHomeData();
+        await context.read<AppProvider>().initHomeData();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Bet placed successfully!"),
@@ -473,12 +516,16 @@ class _HomeScreenState extends State<HomeScreen>
                                                     Color(0xFF2196F3),
                                                     Color(0xFF00B4DB),
                                                   ],
-                                                  () => _placeBet(
-                                                    tData.matchId,
-                                                    tData.teamA,
-                                                    true,
-                                                    "${tData.teamA} VS ${tData.teamB}",
-                                                  ),
+                                                  _isBetting
+                                                      ? null
+                                                      : () {
+                                                          _placeBet(
+                                                            tData.matchId,
+                                                            tData.teamA,
+                                                            true,
+                                                            "${tData.teamA} VS ${tData.teamB}",
+                                                          );
+                                                        },
                                                 ),
                                               ),
                                               const SizedBox(width: 16),
@@ -489,12 +536,16 @@ class _HomeScreenState extends State<HomeScreen>
                                                     Color(0xFFFF512F),
                                                     Color(0xFFF09819),
                                                   ],
-                                                  () => _placeBet(
-                                                    tData.matchId,
-                                                    tData.teamB,
-                                                    false,
-                                                    "${tData.teamA} VS ${tData.teamB}",
-                                                  ),
+                                                  _isBetting
+                                                      ? null
+                                                      : () {
+                                                          _placeBet(
+                                                            tData.matchId,
+                                                            tData.teamB,
+                                                            false,
+                                                            "${tData.teamA} VS ${tData.teamB}",
+                                                          );
+                                                        },
                                                 ),
                                               ),
                                             ],
@@ -615,6 +666,38 @@ class _HomeScreenState extends State<HomeScreen>
                                       ],
                                     ),
                                   ),
+
+                                  // Show loading overlay while the bet is being placed.
+                                  if (_isBetting &&
+                                      _activeBettingMatchId == tData.matchId)
+                                    Positioned.fill(
+                                      child: Container(
+                                        color: Colors.black.withOpacity(0.35),
+                                        alignment: Alignment.center,
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            SizedBox(
+                                              height: 32,
+                                              width: 32,
+                                              child:
+                                                  const CircularProgressIndicator(
+                                                    color: Color(0xFF00E5FF),
+                                                    strokeWidth: 3,
+                                                  ),
+                                            ),
+                                            SizedBox(height: 12),
+                                            Text(
+                                              "Placing bet...",
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w900,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
                                 ],
                               ),
                             ),
@@ -655,13 +738,7 @@ class _HomeScreenState extends State<HomeScreen>
                                 ).withOpacity(0.1),
                                 onTap: () => _navigateToNext(
                                   MatchLogsPage(
-                                    match: {
-                                      'match_id':
-                                          provider.pastMatches[index].matchId,
-                                      'tamA': provider.pastMatches[index].teamA,
-                                      'teamB':
-                                          provider.pastMatches[index].teamB,
-                                    },
+                                    match: provider.pastMatches[index],
                                   ),
                                 ),
                                 child: PastmatchesCard(
@@ -699,7 +776,7 @@ class _HomeScreenState extends State<HomeScreen>
   Widget _buildVoteButton(
     String label,
     List<Color> colors,
-    VoidCallback onTap,
+    VoidCallback? onTap,
   ) {
     return Container(
       decoration: BoxDecoration(
