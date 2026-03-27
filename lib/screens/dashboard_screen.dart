@@ -19,6 +19,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   int showResult = 0;
 
+  double _round2(num value) => (value * 100).round() / 100;
+
   @override
   void initState() {
     super.initState();
@@ -901,7 +903,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
 
     // Divide total pool equally among winning bettors.
-    final double perWinnerAmt = totalPoolAmount / winnerCount;
+    final double perWinnerAmt = _round2(totalPoolAmount / winnerCount);
 
     // Map bettor name -> user document id (uid) by querying `users` where `name` matches.
     final Map<String, String> nameToUid = await _getUserIdsByNames([
