@@ -21,6 +21,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   double _round2(num value) => (value * 100).round() / 100;
 
+  num _toNum(dynamic v) {
+    if (v == null) return 0;
+    if (v is num) return v;
+    if (v is String) return num.tryParse(v.trim()) ?? 0;
+    return 0;
+  }
+
+  String _money(dynamic value) => _round2(_toNum(value)).toStringAsFixed(2);
+
   @override
   void initState() {
     super.initState();
@@ -237,7 +246,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           Expanded(
                             child: statBox(
                               "Profit",
-                              "₹${user['totalProfit']}",
+                              "₹${_money(user['totalProfit'])}",
                               const Color(0xFF00E5FF),
                             ),
                           ),
@@ -365,7 +374,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                         match: "${data['matches']}",
                                         bet: "${data['betted_team']}",
                                         result: "${data['result']}",
-                                        amount: "${data['profit']}",
+                                        amount: _money(data['profit']),
                                       );
                                     },
                                   );
@@ -476,7 +485,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                               ),
                                             ),
                                             Text(
-                                              "₹${player["totalProfit"] ?? 0}",
+                                              "₹${_money(player["totalProfit"])}",
                                               style: const TextStyle(
                                                 color: Color(0xFF00E5FF),
                                                 fontWeight: FontWeight.bold,
@@ -504,7 +513,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final String name = player['name'] ?? 'Unknown';
     final String email = player['email'] ?? '';
 
-    final String totalProfit = '₹${player['totalProfit'] ?? 0}';
+    final String totalProfit = '₹${_money(player['totalProfit'])}';
     final String totalBets = '${player['totalBets'] ?? 0}';
     final String totalWins = '${player['totalWins'] ?? 0}';
     final String totalLosses = '${player['totalLosses'] ?? 0}';
@@ -945,7 +954,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final myBetsRef = userRef.collection('mybets').doc(matchId);
 
       batch.set(myBetsRef, {
-        "profit": -10,
+        "profit": _round2(-10),
         "result": "loss",
       }, SetOptions(merge: true));
 
