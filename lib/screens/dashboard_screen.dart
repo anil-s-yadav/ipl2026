@@ -673,7 +673,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       const SizedBox(height: 8),
                       DropdownButtonFormField<String>(
-                        value: selectedMatchId,
+                        initialValue: selectedMatchId,
                         dropdownColor: const Color(0xFF1E2238),
                         style: const TextStyle(
                           color: Colors.white,
@@ -724,7 +724,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       const SizedBox(height: 8),
                       DropdownButtonFormField<String>(
-                        value: selectedWinnerTeam,
+                        initialValue: selectedWinnerTeam,
                         dropdownColor: const Color(0xFF1E2238),
                         style: const TextStyle(
                           color: Colors.white,
