@@ -38,12 +38,30 @@ class _HomeScreenState extends State<HomeScreen>
     String team,
     bool isTeamA,
     String matches,
+    String matchTime,
   ) async {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) {
+        DateTime now = DateTime.now();
         double betAmount = 10.0;
+        bool isLate = false;
+
+        if (matchTime == "afternoon") {
+          // 3:30 PM = 15:30
+          if (now.hour > 15 || (now.hour == 15 && now.minute >= 30)) {
+            betAmount = 30.0;
+            isLate = true;
+          }
+        } else {
+          // evening: 7:30 PM = 19:30
+          if (now.hour > 19 || (now.hour == 19 && now.minute >= 30)) {
+            betAmount = 30.0;
+            isLate = true;
+          }
+        }
+
         return Container(
           padding: const EdgeInsets.all(24),
           decoration: const BoxDecoration(
@@ -68,6 +86,29 @@ class _HomeScreenState extends State<HomeScreen>
                   color: Colors.white,
                 ),
               ),
+              if (isLate) ...[
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red.withOpacity(0.5)),
+                  ),
+                  child: const Text(
+                    "⚠️ Late Bet Charge: ₹20 extra applies after cutoff",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.redAccent,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 20),
               Container(
                 decoration: BoxDecoration(
@@ -469,7 +510,7 @@ class _HomeScreenState extends State<HomeScreen>
                                                   BorderRadius.circular(20),
                                             ),
                                             child: Text(
-                                              "Winner: ${tData.winnerTeam} 🎉",
+                                              "Winner: ${tData.winnerTeam} - ₹${tData.totalPoolAmount} 🎉",
                                               style: const TextStyle(
                                                 fontSize: 18,
                                                 fontWeight: FontWeight.bold,
@@ -517,6 +558,28 @@ class _HomeScreenState extends State<HomeScreen>
                                           ),
 
                                         const SizedBox(height: 16),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white12,
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            "${tData.matchTime.toUpperCase()} MATCH",
+                                            style: const TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white54,
+                                              letterSpacing: 1,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
                                         Text(
                                           "${tData.teamA} VS ${tData.teamB}",
                                           style: const TextStyle(
@@ -549,6 +612,7 @@ class _HomeScreenState extends State<HomeScreen>
                                                             tData.teamA,
                                                             true,
                                                             "${tData.teamA} VS ${tData.teamB}",
+                                                            tData.matchTime,
                                                           );
                                                         },
                                                 ),
@@ -569,6 +633,7 @@ class _HomeScreenState extends State<HomeScreen>
                                                             tData.teamB,
                                                             false,
                                                             "${tData.teamA} VS ${tData.teamB}",
+                                                            tData.matchTime,
                                                           );
                                                         },
                                                 ),
@@ -785,7 +850,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   Widget _buildSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.only(left: 20, right: 20, top: 32, bottom: 16),
+      padding: const EdgeInsets.only(left: 20, right: 20, top: 10, bottom: 16),
       child: Text(
         title,
         style: const TextStyle(

@@ -12,14 +12,15 @@ class AddMatchPage extends StatefulWidget {
 class _AddMatchPageState extends State<AddMatchPage> {
   final _teamAController = TextEditingController();
   final _teamBController = TextEditingController();
-  // String? _selectedmatch;
   DateTime? _selectedDate;
+  String _selectedmatchTime = "afternoon";
   bool isLoading = false;
 
   void _submitData() async {
     if (_teamAController.text.isEmpty ||
         _teamBController.text.isEmpty ||
-        _selectedDate == null) {
+        _selectedDate == null ||
+        _selectedmatchTime.isEmpty) {
       return;
     }
 
@@ -27,7 +28,7 @@ class _AddMatchPageState extends State<AddMatchPage> {
       _selectedDate!,
       _teamAController.text,
       _teamBController.text,
-      // _selectedmatch!,
+      _selectedmatchTime,
     );
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(backgroundColor: Colors.green, content: Text("Success!")),
@@ -75,6 +76,22 @@ class _AddMatchPageState extends State<AddMatchPage> {
                   lastDate: DateTime(2030),
                 );
                 if (picked != null) setState(() => _selectedDate = picked);
+              },
+            ),
+            SizedBox(height: 10),
+            DropdownButtonFormField<String>(
+              value: _selectedmatchTime,
+              decoration: InputDecoration(labelText: "Time Slot"),
+              items: ["afternoon", "evening"].map((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+              onChanged: (newValue) {
+                setState(() {
+                  _selectedmatchTime = newValue!;
+                });
               },
             ),
             SizedBox(height: 20),

@@ -14,6 +14,7 @@ class MatchModel {
   final double totalBetsCount;
   final double totalPoolAmount;
   final String winnerTeam;
+  final String matchTime; // afternoon or evening
 
   MatchModel({
     required this.matchId,
@@ -29,6 +30,7 @@ class MatchModel {
     required this.totalBetsCount,
     required this.totalPoolAmount,
     required this.winnerTeam,
+    required this.matchTime,
   });
 
   factory MatchModel.fromMap(Map<String, dynamic> map, String id) {
@@ -49,6 +51,7 @@ class MatchModel {
           .toDouble(),
       totalPoolAmount: (map['totalPoolAmount'] ?? 0).toDouble(),
       winnerTeam: map['winnerTeam'] ?? '',
+      matchTime: map['matchTime'] ?? 'evening',
     );
   }
 }

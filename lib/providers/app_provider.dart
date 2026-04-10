@@ -7,7 +7,7 @@ class AppProvider with ChangeNotifier {
   final AuthService _auth = AuthService();
 
   Map<String, dynamic>? currentUserData;
-  List<Map<String, dynamic>> otherUsers = [];
+  List<Map<String, dynamic>> allPlayers = [];
   List<Map<String, dynamic>> myBetsHistory = [];
 
   List<MatchModel> allMatches = [];
@@ -52,6 +52,17 @@ class AppProvider with ChangeNotifier {
         }
       }
 
+      today.sort((a, b) {
+        int dateCompare = a.matchDate.compareTo(b.matchDate);
+        if (dateCompare == 0) {
+          // If same day, put afternoon before evening
+          return a.matchTime.compareTo(b.matchTime);
+        }
+        return dateCompare;
+      });
+      upcoming.sort((a, b) => a.matchDate.compareTo(b.matchDate));
+      past.sort((a, b) => b.matchDate.compareTo(a.matchDate));
+
       todayMatches = today;
       upcomingMatches = upcoming;
       pastMatches = past;
@@ -86,7 +97,15 @@ class AppProvider with ChangeNotifier {
 
     try {
       currentUserData ??= await _auth.getUserData();
-      otherUsers = await _auth.getAllUsersExceptMe();
+      allPlayers = await _auth.getAllUsers();
+      
+      // Sort players by profit (descending)
+      allPlayers.sort((a, b) {
+        double profitA = (a['totalProfit'] ?? 0).toDouble();
+        double profitB = (b['totalProfit'] ?? 0).toDouble();
+        return profitB.compareTo(profitA);
+      });
+
       myBetsHistory = await _auth.getMyBetsHis();
     } catch (e) {
       debugPrint("Error loading dashboard data: $e");

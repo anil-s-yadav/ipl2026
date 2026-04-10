@@ -397,7 +397,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                       const SizedBox(height: 24),
 
-                      /// OTHER PLAYERS
+                      /// PLAYERS LEADERBOARD
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
@@ -409,7 +409,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              "Other Players",
+                              "Players Leaderboard",
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -417,12 +417,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                             ),
                             const SizedBox(height: 15),
-                            provider.otherUsers.isEmpty
+                            provider.allPlayers.isEmpty
                                 ? const Center(
                                     child: Padding(
                                       padding: EdgeInsets.all(20),
                                       child: Text(
-                                        "No other players",
+                                        "No players found",
                                         style: TextStyle(color: Colors.white54),
                                       ),
                                     ),
@@ -436,32 +436,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     shrinkWrap: true,
                                     physics:
                                         const NeverScrollableScrollPhysics(),
-                                    itemCount: provider.otherUsers.length,
+                                    itemCount: provider.allPlayers.length,
                                     itemBuilder: (context, index) {
-                                      final player = provider.otherUsers[index];
+                                      final player = provider.allPlayers[index];
+                                      final bool isMe =
+                                          player['email'] == user['email'];
+
                                       return ListTile(
                                         contentPadding: EdgeInsets.zero,
                                         onTap: () =>
                                             _showOtherUserStatesDialog(player),
                                         leading: CircleAvatar(
                                           radius: 24,
-                                          backgroundColor: const Color(
-                                            0xFF6200EA,
-                                          ).withOpacity(0.2),
+                                          backgroundColor: isMe
+                                              ? const Color(0xFF00E5FF)
+                                                  .withOpacity(0.2)
+                                              : const Color(0xFF6200EA)
+                                                  .withOpacity(0.2),
                                           child: Text(
                                             (player['name'] ?? "U")[0]
                                                 .toUpperCase(),
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontWeight: FontWeight.bold,
-                                              color: Color(0xFF00E5FF),
+                                              color: isMe
+                                                  ? Colors.white
+                                                  : const Color(0xFF00E5FF),
                                             ),
                                           ),
                                         ),
                                         title: Text(
-                                          "${player['name']}",
-                                          style: const TextStyle(
+                                          "${player['name']}${isMe ? ' (Me)' : ''}",
+                                          style: TextStyle(
                                             fontWeight: FontWeight.bold,
-                                            color: Colors.white,
+                                            color: isMe
+                                                ? const Color(0xFF00E5FF)
+                                                : Colors.white,
                                           ),
                                         ),
                                         subtitle: const Text(
@@ -705,7 +714,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           final d = m.data();
                           final a = (d['teamA'] ?? 'Team A').toString();
                           final b = (d['teamB'] ?? 'Team B').toString();
-                          final dateLabel = _formatMatchDateLabel(d['matchDate']);
+                          final dateLabel = _formatMatchDateLabel(
+                            d['matchDate'],
+                          );
                           return DropdownMenuItem(
                             value: m.id,
                             child: Text(
@@ -923,12 +934,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final List<String> winnerUsers = isTeamAWinner ? teamAUsers : teamBUsers;
     final List<String> loserUsers = isTeamAWinner ? teamBUsers : teamAUsers;
 
-    if (winnerCount <= 0) {
-      throw Exception("Winner bet count is zero; cannot distribute pool.");
-    }
-
     // Divide total pool equally among winning bettors.
-    final double perWinnerAmt = _round2(totalPoolAmount / winnerCount);
+    // If no one betted on the winner, profit is 0.
+    final double perWinnerAmt =
+        winnerCount > 0 ? _round2(totalPoolAmount / winnerCount) : 0.0;
 
     // Map bettor name -> user document id (uid) by querying `users` where `name` matches.
     final Map<String, String> nameToUid = await _getUserIdsByNames([
@@ -939,7 +948,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final WriteBatch batch = _db.batch();
 
     // Update match settlement data.
-    batch.update(matchRef, {"winAmt": perWinnerAmt, "winnerTeam": team});
+    batch.update(matchRef, {"winnerTeam": team});
 
     // Update winning bettors.
     for (final bettorName in winnerUsers) {
@@ -1036,6 +1045,7 @@ class BetTile extends StatelessWidget {
   Widget build(BuildContext context) {
     bool isWin = result.toLowerCase() == "win";
     bool isPending = result.toLowerCase() == "pending";
+
     Color statusColor = isWin
         ? Colors.greenAccent
         : (isPending ? Colors.orangeAccent : Colors.pinkAccent);

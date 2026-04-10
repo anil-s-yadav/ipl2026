@@ -87,16 +87,9 @@ class AuthService {
 
   // Get all users data
 
-  Future<List<Map<String, dynamic>>> getAllUsersExceptMe() async {
+  Future<List<Map<String, dynamic>>> getAllUsers() async {
     try {
-      String myUid = _auth.currentUser!.uid;
-
-      // Query 'users' collection where the document ID is not mine
-      // FieldPath.documentId refers to the actual ID of the document (mkYunXp...)
-      QuerySnapshot querySnapshot = await _db
-          .collection('users')
-          .where(FieldPath.documentId, isNotEqualTo: myUid)
-          .get();
+      QuerySnapshot querySnapshot = await _db.collection('users').get();
 
       // Map the documents into a list of Map objects
       return querySnapshot.docs
@@ -138,7 +131,8 @@ class AuthService {
     }
   }
 
-  Future<void> insertMatch(DateTime date, String teamA, String teamB) async {
+  Future<void> insertMatch(
+      DateTime date, String teamA, String teamB, String matchTime) async {
     try {
       Map<String, dynamic> matchData = {
         "matchDate": Timestamp.fromDate(date),
@@ -153,6 +147,7 @@ class AuthService {
         "totalBetsCount": 0.0,
         "totalPoolAmount": 0.0,
         "winnerTeam": "",
+        "matchTime": matchTime,
       };
 
       // ✅ Auto-generate matchId
