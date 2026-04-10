@@ -629,12 +629,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _handleSettlementPressed() async {
     if (!mounted) return;
 
-    final matches = await _getTodayPendingMatches();
+    final matches = await _getSettlablePendingMatches();
 
     if (matches.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("No pending matches found for today."),
+          content: Text(
+            "No pending settlements (past or today). Future matches are not shown.",
+          ),
           backgroundColor: Colors.orange,
         ),
       );
@@ -703,10 +705,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           final d = m.data();
                           final a = (d['teamA'] ?? 'Team A').toString();
                           final b = (d['teamB'] ?? 'Team B').toString();
+                          final dateLabel = _formatMatchDateLabel(d['matchDate']);
                           return DropdownMenuItem(
                             value: m.id,
                             child: Text(
-                              "$a vs $b",
+                              dateLabel.isEmpty
+                                  ? "$a vs $b"
+                                  : "$a vs $b · $dateLabel",
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w900,
@@ -859,22 +864,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
-  _getTodayPendingMatches() async {
-    final now = DateTime.now();
-    final start = DateTime(now.year, now.month, now.day);
-    final end = start.add(const Duration(days: 1));
+  /// Past + today only; excludes future-dated matches. Pending = no winner set.
+  String _formatMatchDateLabel(dynamic matchDate) {
+    if (matchDate is Timestamp) {
+      final dt = matchDate.toDate();
+      return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+    }
+    return '';
+  }
 
-    // Query only by `matchDate` to avoid composite-index errors.
-    final QuerySnapshot<Map<String, dynamic>> allToday = await _db
+  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
+  _getSettlablePendingMatches() async {
+    final now = DateTime.now();
+    final startOfTomorrow = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).add(const Duration(days: 1));
+
+    // All matches on or before today: matchDate < start of tomorrow.
+    // Future matches are excluded. Pending filtered in memory.
+    final QuerySnapshot<Map<String, dynamic>> snap = await _db
         .collection('matches')
-        .where('matchDate', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
-        .where('matchDate', isLessThan: Timestamp.fromDate(end))
+        .where('matchDate', isLessThan: Timestamp.fromDate(startOfTomorrow))
         .orderBy('matchDate', descending: false)
         .get();
 
-    // Filter pending matches in memory.
-    return allToday.docs.where((doc) {
+    return snap.docs.where((doc) {
       final data = doc.data();
       final w = data['winnerTeam'];
       return w == null || (w is String && w.trim().isEmpty);

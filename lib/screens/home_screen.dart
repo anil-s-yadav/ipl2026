@@ -321,37 +321,13 @@ class _HomeScreenState extends State<HomeScreen>
                               color: Colors.white.withOpacity(0.05),
                             ),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                "Note:",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w900,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              if (kIsWeb) const SizedBox(height: 10),
-                              if (kIsWeb)
-                                Text(
-                                  "Use the mobile application for better experience and reliability.",
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 13,
-                                    height: 1.4,
-                                  ),
-                                ),
-                              if (kIsWeb) const SizedBox(height: 6),
-                              Text(
-                                "Take actions carefully: actions are not reversible.",
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 13,
-                                  height: 1.4,
-                                ),
-                              ),
-                            ],
+                          child: Text(
+                            "Note: Take actions carefully: actions are not reversible.",
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                              height: 1.4,
+                            ),
                           ),
                         ),
                       ),
