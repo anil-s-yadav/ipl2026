@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:ipl2026/models/match_model.dart';
 import 'package:ipl2026/models/log_model.dart';
-import 'package:ipl2026/services/auth_service.dart';
+import 'package:ipl2026/services/firebase_service.dart';
+import 'package:ipl2026/models/user_model.dart';
+import 'package:ipl2026/models/bet_history_model.dart';
 
 class AppProvider with ChangeNotifier {
   final AuthService _auth = AuthService();
 
-  Map<String, dynamic>? currentUserData;
-  List<Map<String, dynamic>> allPlayers = [];
-  List<Map<String, dynamic>> myBetsHistory = [];
+  UserModel? currentUserData;
+  List<UserModel> allPlayers = [];
+  List<BetHistoryModel> myBetsHistory = [];
 
   List<MatchModel> allMatches = [];
   List<MatchModel> todayMatches = [];
@@ -27,10 +29,7 @@ class AppProvider with ChangeNotifier {
 
     try {
       currentUserData = await _auth.getUserData();
-      var rawData = await _auth.getAllMatches();
-      allMatches = rawData
-          .map((e) => MatchModel.fromMap(e, e['match_id']))
-          .toList();
+      allMatches = await _auth.getAllMatches();
 
       DateTime now = DateTime.now();
       bool isSameDay(DateTime a, DateTime b) {
@@ -69,15 +68,12 @@ class AppProvider with ChangeNotifier {
 
       allMatches = [...today, ...upcoming, ...past];
 
-      var rawLog1 = today.isNotEmpty
+      match1Logs = today.isNotEmpty
           ? await _auth.getLogsByMatchId(today[0].matchId)
-          : <Map<String, dynamic>>[];
-      var rawLog2 = today.length > 1
+          : <LogModel>[];
+      match2Logs = today.length > 1
           ? await _auth.getLogsByMatchId(today[1].matchId)
-          : <Map<String, dynamic>>[];
-
-      match1Logs = rawLog1.map((e) => LogModel.fromMap(e)).toList();
-      match2Logs = rawLog2.map((e) => LogModel.fromMap(e)).toList();
+          : <LogModel>[];
 
       // Newest first (who Betd last on top). Since `date_time` is ISO-8601,
       // string compare matches chronological order.
@@ -98,12 +94,10 @@ class AppProvider with ChangeNotifier {
     try {
       currentUserData ??= await _auth.getUserData();
       allPlayers = await _auth.getAllUsers();
-      
+ 
       // Sort players by profit (descending)
       allPlayers.sort((a, b) {
-        double profitA = (a['totalProfit'] ?? 0).toDouble();
-        double profitB = (b['totalProfit'] ?? 0).toDouble();
-        return profitB.compareTo(profitA);
+        return b.totalProfit.compareTo(a.totalProfit);
       });
 
       myBetsHistory = await _auth.getMyBetsHis();

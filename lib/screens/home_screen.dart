@@ -186,7 +186,7 @@ class _HomeScreenState extends State<HomeScreen>
   ) async {
     String? uid = FirebaseAuth.instance.currentUser?.uid;
     String? userName =
-        context.read<AppProvider>().currentUserData?['name'] ?? "User";
+        context.read<AppProvider>().currentUserData?.name ?? "User";
     if (uid == null) return;
 
     try {
@@ -297,7 +297,7 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
-    String? currentUserName = provider.currentUserData?['name'];
+    String? currentUserName = provider.currentUserData?.name;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0B0F19),

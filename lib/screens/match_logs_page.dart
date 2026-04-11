@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:ipl2026/services/auth_service.dart';
+import 'package:ipl2026/services/firebase_service.dart';
 import 'package:intl/intl.dart';
 import 'package:ipl2026/models/log_model.dart';
 import 'package:ipl2026/models/match_model.dart';
@@ -25,8 +25,7 @@ class _MatchLogsPageState extends State<MatchLogsPage> {
 
   void getData() async {
     try {
-      final raw = await auth.getLogsByMatchId(widget.match.matchId);
-      final crntMatchlogs = raw.map((e) => LogModel.fromMap(e)).toList();
+      final crntMatchlogs = await auth.getLogsByMatchId(widget.match.matchId);
       if (mounted) {
         setState(() {
           currentMatchLogs = crntMatchlogs;

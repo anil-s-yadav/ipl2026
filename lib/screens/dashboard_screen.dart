@@ -1,10 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:ipl2026/models/bet_history_model.dart';
+import 'package:ipl2026/models/user_model.dart';
 import 'package:provider/provider.dart';
 import 'package:ipl2026/providers/app_provider.dart';
 import 'package:ipl2026/screens/addmatchpage.dart';
 import 'package:ipl2026/screens/login_screen.dart';
-import 'package:ipl2026/services/auth_service.dart';
+import 'package:ipl2026/services/firebase_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -38,8 +40,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
-  bool isAdmin(Map<String, dynamic>? user) {
-    return (user?['email'] == 'anilyadav44x@gmail.com');
+  bool isAdmin(UserModel? user) {
+    return (user?.email == 'anilyadav44x@gmail.com');
   }
 
   @override
@@ -184,7 +186,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               radius: 35,
                               backgroundColor: Colors.white,
                               child: Text(
-                                user['email']?[0].toUpperCase() ?? "U",
+                                user.email[0].toUpperCase(),
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 26,
@@ -198,7 +200,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    user['name'] ?? "",
+                                    user.name,
                                     style: const TextStyle(
                                       fontSize: 22,
                                       fontWeight: FontWeight.bold,
@@ -207,7 +209,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    user['email'],
+                                    user.email,
                                     style: const TextStyle(
                                       color: Colors.white70,
                                       fontSize: 14,
@@ -246,7 +248,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           Expanded(
                             child: statBox(
                               "Profit",
-                              "₹${_money(user['totalProfit'])}",
+                              "₹${_money(user.totalProfit)}",
                               const Color(0xFF00E5FF),
                             ),
                           ),
@@ -254,7 +256,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           Expanded(
                             child: statBox(
                               "Bets",
-                              "${user['totalBets']}",
+                              "${user.totalBets.toInt()}",
                               const Color(0xFFFF3D00),
                             ),
                           ),
@@ -266,7 +268,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           Expanded(
                             child: statBox(
                               "Won",
-                              "${user['totalWins']}",
+                              "${user.totalWins.toInt()}",
                               Colors.greenAccent,
                             ),
                           ),
@@ -274,7 +276,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           Expanded(
                             child: statBox(
                               "Lost",
-                              "${user['totalLosses']}",
+                              "${user.totalLosses.toInt()}",
                               Colors.pinkAccent,
                             ),
                           ),
@@ -335,18 +337,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             Builder(
                               builder: (context) {
                                 if (provider.myBetsHistory.isNotEmpty) {
-                                  List<Map<String, dynamic>> filteredBets =
-                                      provider.myBetsHistory.where((bet) {
-                                        String res = bet['result']
-                                            .toString()
-                                            .toLowerCase();
+                                  List<BetHistoryModel> filteredBets = provider
+                                      .myBetsHistory
+                                      .where((bet) {
+                                        String res = bet.result.toLowerCase();
                                         if (showResult == 0) {
                                           return res == "win" ||
                                               res == "pending";
                                         } else {
                                           return res == "loss";
                                         }
-                                      }).toList();
+                                      })
+                                      .toList();
 
                                   if (filteredBets.isEmpty) {
                                     return const Center(
@@ -370,11 +372,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     itemBuilder: (context, index) {
                                       final data = filteredBets[index];
                                       return BetTile(
-                                        date: "${data['match_date']}",
-                                        match: "${data['matches']}",
-                                        bet: "${data['betted_team']}",
-                                        result: "${data['result']}",
-                                        amount: _money(data['profit']),
+                                        date: data.matchDate,
+                                        match: data.matches,
+                                        bet: data.bettedTeam,
+                                        result: data.result,
+                                        amount: _money(data.profit),
                                       );
                                     },
                                   );
@@ -440,7 +442,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     itemBuilder: (context, index) {
                                       final player = provider.allPlayers[index];
                                       final bool isMe =
-                                          player['email'] == user['email'];
+                                          player.email == user.email;
 
                                       return ListTile(
                                         contentPadding: EdgeInsets.zero,
@@ -449,13 +451,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                         leading: CircleAvatar(
                                           radius: 24,
                                           backgroundColor: isMe
-                                              ? const Color(0xFF00E5FF)
-                                                  .withOpacity(0.2)
-                                              : const Color(0xFF6200EA)
-                                                  .withOpacity(0.2),
+                                              ? const Color(
+                                                  0xFF00E5FF,
+                                                ).withOpacity(0.2)
+                                              : const Color(
+                                                  0xFF6200EA,
+                                                ).withOpacity(0.2),
                                           child: Text(
-                                            (player['name'] ?? "U")[0]
-                                                .toUpperCase(),
+                                            player.name[0].toUpperCase(),
                                             style: TextStyle(
                                               fontWeight: FontWeight.bold,
                                               color: isMe
@@ -465,7 +468,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                           ),
                                         ),
                                         title: Text(
-                                          "${player['name']}${isMe ? ' (Me)' : ''}",
+                                          "${player.name}${isMe ? ' (Me)' : ''}",
                                           style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                             color: isMe
@@ -494,7 +497,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                               ),
                                             ),
                                             Text(
-                                              "₹${_money(player["totalProfit"])}",
+                                              "₹${_money(player.totalProfit)}",
                                               style: const TextStyle(
                                                 color: Color(0xFF00E5FF),
                                                 fontWeight: FontWeight.bold,
@@ -518,14 +521,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  void _showOtherUserStatesDialog(Map<String, dynamic> player) {
-    final String name = player['name'] ?? 'Unknown';
-    final String email = player['email'] ?? '';
+  void _showOtherUserStatesDialog(UserModel player) {
+    final String name = player.name;
+    final String email = player.email;
 
-    final String totalProfit = '₹${_money(player['totalProfit'])}';
-    final String totalBets = '${player['totalBets'] ?? 0}';
-    final String totalWins = '${player['totalWins'] ?? 0}';
-    final String totalLosses = '${player['totalLosses'] ?? 0}';
+    final String totalProfit = '₹${_money(player.totalProfit)}';
+    final String totalBets = '${player.totalBets.toInt()}';
+    final String totalWins = '${player.totalWins.toInt()}';
+    final String totalLosses = '${player.totalLosses.toInt()}';
 
     showDialog(
       context: context,
@@ -936,8 +939,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     // Divide total pool equally among winning bettors.
     // If no one betted on the winner, profit is 0.
-    final double perWinnerAmt =
-        winnerCount > 0 ? _round2(totalPoolAmount / winnerCount) : 0.0;
+    final double perWinnerAmt = winnerCount > 0
+        ? _round2(totalPoolAmount / winnerCount)
+        : 0.0;
 
     // Map bettor name -> user document id (uid) by querying `users` where `name` matches.
     final Map<String, String> nameToUid = await _getUserIdsByNames([

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:ipl2026/services/auth_service.dart';
+import 'package:ipl2026/services/firebase_service.dart';
 
 class AddMatchPage extends StatefulWidget {
   const AddMatchPage({super.key});

@@ -3,6 +3,10 @@ import 'dart:developer';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ipl2026/services/shared_preferences.dart';
+import 'package:ipl2026/models/user_model.dart';
+import 'package:ipl2026/models/match_model.dart';
+import 'package:ipl2026/models/log_model.dart';
+import 'package:ipl2026/models/bet_history_model.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -65,7 +69,7 @@ class AuthService {
   // }
 
   //User profile
-  Future<Map<String, dynamic>?> getUserData() async {
+  Future<UserModel?> getUserData() async {
     try {
       // 1. Get current logged-in user ID
       String uid = _auth.currentUser!.uid;
@@ -74,7 +78,7 @@ class AuthService {
       DocumentSnapshot doc = await _db.collection('users').doc(uid).get();
 
       if (doc.exists) {
-        return doc.data() as Map<String, dynamic>;
+        return UserModel.fromMap(doc.data() as Map<String, dynamic>, doc.id);
       } else {
         log("User document does not exist");
         return null;
@@ -87,13 +91,16 @@ class AuthService {
 
   // Get all users data
 
-  Future<List<Map<String, dynamic>>> getAllUsers() async {
+  Future<List<UserModel>> getAllUsers() async {
     try {
       QuerySnapshot querySnapshot = await _db.collection('users').get();
 
-      // Map the documents into a list of Map objects
+      // Map the documents into a list of UserModel objects
       return querySnapshot.docs
-          .map((doc) => doc.data() as Map<String, dynamic>)
+          .map(
+            (doc) =>
+                UserModel.fromMap(doc.data() as Map<String, dynamic>, doc.id),
+          )
           .toList();
     } catch (e) {
       print("Error fetching users: $e");
@@ -101,7 +108,7 @@ class AuthService {
     }
   }
 
-  Future<List<Map<String, dynamic>>> getMyBetsHis() async {
+  Future<List<BetHistoryModel>> getMyBetsHis() async {
     try {
       String uid = _auth.currentUser!.uid;
 
@@ -114,16 +121,10 @@ class AuthService {
           .get();
 
       return querySnapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-
-        return {
-          "match_id": doc.id, // optional: include matchId
-          "betted_team": data["betted_team"] ?? "",
-          "matches": data["matches"] ?? "",
-          "result": data["result"] ?? "",
-          "profit": (data["profit"] ?? 0).toDouble(),
-          "match_date": data["match_date"] ?? "",
-        };
+        return BetHistoryModel.fromMap(
+          doc.data() as Map<String, dynamic>,
+          doc.id,
+        );
       }).toList();
     } catch (e) {
       print("Error fetching my bets: $e");
@@ -132,7 +133,11 @@ class AuthService {
   }
 
   Future<void> insertMatch(
-      DateTime date, String teamA, String teamB, String matchTime) async {
+    DateTime date,
+    String teamA,
+    String teamB,
+    String matchTime,
+  ) async {
     try {
       Map<String, dynamic> matchData = {
         "matchDate": Timestamp.fromDate(date),
@@ -157,32 +162,14 @@ class AuthService {
     }
   }
 
-  Future<List<Map<String, dynamic>>> getAllMatches() async {
+  Future<List<MatchModel>> getAllMatches() async {
     try {
       QuerySnapshot snapshot = await _db.collection('matches').get();
 
       print("Docs count: ${snapshot.docs.length}"); // debug
 
       return snapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-
-        return {
-          "match_id": doc.id,
-          "matchDate": (data["matchDate"] as Timestamp).toDate(),
-          "teamA": data["teamA"],
-          "teamABetAmount": data["teamABetAmount"],
-          "teamABetCount": data["teamABetCount"],
-          "teamAbetUsers": data["teamAbetUsers"],
-          "teamB": data["teamB"],
-          "teamBBetAmount": data["teamBBetAmount"],
-          "teamBBetCount": data["teamBBetCount"],
-          "teamBbetUsers": data["teamBbetUsers"],
-          // Correct field name is `totalBetsCount` (typo existed as `tetotalBetsCount`).
-          "totalBetsCount":
-              data["totalBetsCount"] ?? data["tetotalBetsCount"] ?? 0.0,
-          "totalPoolAmount": data["totalPoolAmount"],
-          "winnerTeam": data["winnerTeam"],
-        };
+        return MatchModel.fromMap(doc.data() as Map<String, dynamic>, doc.id);
       }).toList();
     } catch (e) {
       log("Error fetching matches: $e");
@@ -190,7 +177,7 @@ class AuthService {
     }
   }
 
-  Future<List<Map<String, dynamic>>> getLogsByMatchId(String matchId) async {
+  Future<List<LogModel>> getLogsByMatchId(String matchId) async {
     try {
       QuerySnapshot snapshot = await _db
           .collection('logs')
@@ -201,7 +188,7 @@ class AuthService {
       return snapshot.docs.map((doc) {
         final data = doc.data() as Map<String, dynamic>;
         data["log_id"] = doc.id;
-        return data;
+        return LogModel.fromMap(data);
       }).toList();
     } catch (e) {
       print("Error fetching logs: $e");

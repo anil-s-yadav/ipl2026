@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ipl2026/main.dart';
 import 'package:ipl2026/screens/signup_screen.dart';
-import 'package:ipl2026/services/auth_service.dart';
+import 'package:ipl2026/services/firebase_service.dart';
 import 'package:ipl2026/services/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
