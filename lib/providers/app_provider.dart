@@ -92,9 +92,9 @@ class AppProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      currentUserData ??= await _auth.getUserData();
+      currentUserData = await _auth.getUserData();
       allPlayers = await _auth.getAllUsers();
- 
+
       // Sort players by profit (descending)
       allPlayers.sort((a, b) {
         return b.totalProfit.compareTo(a.totalProfit);
